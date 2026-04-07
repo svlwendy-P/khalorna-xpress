@@ -181,9 +181,9 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
   <div class="top-bar">
     <div><div class="top-bar-title">Khalorna Xpress</div><div class="top-bar-sub" id="admin-date-sub"></div></div>
     <div style="display:flex;align-items:center;gap:10px">
-      <div style="position:relative;cursor:pointer" onclick="adminTab('reports',document.getElementById('nav-reports'))">
+      <div style="position:relative;cursor:pointer" onclick="adminTab('inbox',document.getElementById('nav-inbox'))">
         <span style="font-size:20px">🔔</span>
-        <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center"></span>
+        <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;align-items:center;justify-content:center"></span>
       </div>
       <span style="font-size:20px;cursor:pointer" title="Change Password" onclick="openChangePass(null,true)">🔒</span>
       <div style="font-size:12px;color:var(--muted)">Admin</div>
@@ -202,6 +202,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
     <div class="nav-item" id="nav-contracts" onclick="adminTab('contracts',this)"><span class="ni">📋</span><span>Contracts</span></div>
     <div class="nav-item" id="nav-destinations" onclick="adminTab('destinations',this)"><span class="ni">📍</span><span>Zones</span></div>
     <div class="nav-item" id="nav-reports" onclick="adminTab('reports',this)"><span class="ni">📊</span><span>Reports</span></div>
+    <div class="nav-item" id="nav-inbox" onclick="adminTab('inbox',this)"><span class="ni">🔔</span><span>Inbox</span></div>
   </nav>
 </div>
 
@@ -218,6 +219,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
   <div class="page-content" id="driver-content"></div>
   <nav class="bottom-nav">
     <div class="nav-item active" id="drv-nav-trips" onclick="workerNav('driver','trips',this)"><span class="ni">📋</span><span>My Trips</span></div>
+    <div class="nav-item" id="drv-nav-earn" onclick="workerNav('driver','earnings',this)"><span class="ni">💰</span><span>Earnings</span></div>
     <div class="nav-item" id="drv-nav-book" onclick="workerNav('driver','book',this)"><span class="ni">➕</span><span>Book Trip</span></div>
   </nav>
 </div>
@@ -235,6 +237,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
   <div class="page-content" id="asst-content"></div>
   <nav class="bottom-nav">
     <div class="nav-item active" id="ast-nav-trips" onclick="workerNav('assistant','trips',this)"><span class="ni">📋</span><span>My Trips</span></div>
+    <div class="nav-item" id="ast-nav-earn" onclick="workerNav('assistant','earnings',this)"><span class="ni">💰</span><span>Earnings</span></div>
     <div class="nav-item" id="ast-nav-book" onclick="workerNav('assistant','book',this)"><span class="ni">➕</span><span>Book Trip</span></div>
   </nav>
 </div>
@@ -590,6 +593,35 @@ function gDB(){
         return t;
       });
     }
+    // ── Vehicle plate migration: AA1234 → CP9078, BB5678 → CP3535 ──
+    if(d.vehicles){
+      // Find old and new vehicle records by plate
+      const migrations=[
+        {oldPlate:'AA1234',newPlate:'CP9078'},
+        {oldPlate:'BB5678',newPlate:'CP3535'},
+      ];
+      migrations.forEach(({oldPlate,newPlate})=>{
+        const oldV=d.vehicles.find(v=>v.plate&&v.plate.toUpperCase()===oldPlate);
+        const newV=d.vehicles.find(v=>v.plate&&v.plate.toUpperCase()===newPlate);
+        if(oldV&&newV){
+          // Migrate all trips from old vehicle to new vehicle, adopt new crew
+          d.trips=(d.trips||[]).map(t=>{
+            if(t.vehicleId===oldV.id){
+              dirty=true;
+              return{...t,vehicleId:newV.id,driverId:newV.driverId,assistantId:newV.assistantId};
+            }
+            return t;
+          });
+          // Remove old vehicle
+          d.vehicles=d.vehicles.filter(v=>v.id!==oldV.id);
+          dirty=true;
+        } else if(oldV&&!newV){
+          // New truck not added yet — just rename the plate so it's correct for display
+          oldV.plate=newPlate;
+          dirty=true;
+        }
+      });
+    }
     if(dirty)localStorage.setItem('kx_v6',JSON.stringify(d));
     return d;
   }
@@ -633,8 +665,8 @@ function initDB(){
       {id:'u6',name:'Sandra White',username:'sandra',password:'pass123',role:'client',phone:'876-555-0300'},
     ],
     vehicles:[
-      {id:'v1',plate:'AA1234',model:'Isuzu NPR',tonnage:'5T',driverId:'u2',assistantId:'u4'},
-      {id:'v2',plate:'BB5678',model:'Mitsubishi Canter',tonnage:'7T',driverId:'u3',assistantId:'u5'},
+      {id:'v1',plate:'CP9078',model:'Isuzu NPR',tonnage:'5T',driverId:'u2',assistantId:'u4'},
+      {id:'v2',plate:'CP3535',model:'Mitsubishi Canter',tonnage:'7T',driverId:'u3',assistantId:'u5'},
     ],
     contracts:[
       {id:'tonnage',name:'Tonnage Contract',description:'Tonnage-based contract haulage rates',color:'#8B5CF6',rates:buildWRates()},
@@ -684,8 +716,20 @@ function doLogin(){
   const u=document.getElementById('login-user').value.trim();
   const p=document.getElementById('login-pass').value.trim();
   const al=document.getElementById('login-alert');
-  const user=gDB().users.find(x=>x.username===u&&x.password===p);
+  if(!u||!p){al.innerHTML='<div class="alert alert-err">Please enter username and password.</div>';return;}
+  const db=gDB();
+  if(!db){al.innerHTML='<div class="alert alert-err">App data not ready. Please refresh the page.</div>';return;}
+  const user=db.users.find(x=>x.username===u&&x.password===p);
   if(!user){al.innerHTML='<div class="alert alert-err">Invalid username or password.</div>';return;}
+  // Enforce selected role matches actual user role
+  const selectedChip=document.querySelector('.role-chip.selected');
+  if(selectedChip){
+    const selectedRole=selectedChip.id.replace('role-','');
+    if(selectedRole!==user.role){
+      al.innerHTML=`<div class="alert alert-err">These credentials belong to a ${user.role}, not ${selectedRole}. Please select the correct role.</div>`;
+      return;
+    }
+  }
   al.innerHTML='';CU=user;showScreen(user.role);
 }
 function doLogout(){CU=null;showScreen('login');}
@@ -709,7 +753,7 @@ function showScreen(role){
 function adminTab(tab,el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   el.classList.add('active');
-  ({dashboard:renderAdminDash,trips:renderAdminTrips,users:renderAdminUsers,vehicles:renderAdminVehicles,payroll:renderAdminPayroll,expenses:renderAdminExpenses,contracts:renderAdminContracts,destinations:renderAdminDestinations,recurring:renderAdminRecurring,reports:renderAdminReports})[tab]();
+  ({dashboard:renderAdminDash,trips:renderAdminTrips,users:renderAdminUsers,vehicles:renderAdminVehicles,payroll:renderAdminPayroll,expenses:renderAdminExpenses,contracts:renderAdminContracts,destinations:renderAdminDestinations,recurring:renderAdminRecurring,reports:renderAdminReports,inbox:renderAdminInbox})[tab]();
 }
 
 let _dashFrom=ds(-30),_dashTo=ds(0);
@@ -800,6 +844,9 @@ function renderAdminTrips(){
   const db=gDB();
   document.getElementById('admin-content').innerHTML=`
     <div class="sec-hdr"><div class="sec-ttl">All Trips</div><button class="btn-sm btn-accent" onclick="openAddTripModal()">+ Add Trip</button></div>
+    <div style="margin-bottom:10px">
+      <input type="text" class="form-input" id="trip-search" placeholder="🔍  Search client, destination, ref..." style="padding:10px 14px;font-size:13px" oninput="applyTF()"/>
+    </div>
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
       <input type="date" class="form-input" id="trip-wk" value="${_tripWeek||''}" style="flex:1;padding:9px 12px;font-size:13px" onchange="_tripWeek=this.value;applyTF()" placeholder="Filter by week"/>
       ${_tripWeek?`<button class="btn-sm btn-ghost" onclick="_tripWeek=null;document.getElementById('trip-wk').value='';applyTF()">✕</button>`:''}
@@ -818,8 +865,17 @@ function renderAdminTrips(){
 }
 function fTrips(s,el){_tripStatus=s;document.querySelectorAll('#tf-row .chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');applyTF();}
 function applyTF(){
-  const db=gDB();let list=_tripStatus==='All'?db.trips:db.trips.filter(t=>t.status===_tripStatus);
+  const db=gDB();const dests=gDEST();
+  const q=(document.getElementById('trip-search')||{value:''}).value.trim().toLowerCase();
+  let list=_tripStatus==='All'?db.trips:db.trips.filter(t=>t.status===_tripStatus);
   if(_tripWeek){const w=weekRange(_tripWeek);list=list.filter(t=>t.date>=w.s&&t.date<=w.e);}
+  if(q){list=list.filter(t=>{
+    const d=dests[t.di];
+    return t.clientName.toLowerCase().includes(q)||
+      t.id.toLowerCase().includes(q)||
+      (d&&d.n.toLowerCase().includes(q))||
+      (t.clientPhone&&t.clientPhone.includes(q));
+  });}
   document.getElementById('trips-list').innerHTML=tripsList(list,db);
 }
 function tripsList(trips,db){
@@ -893,7 +949,11 @@ function inlinePrev(){
   const db=gDB();const vid=document.getElementById('inline-vsel').value;
   const p=document.getElementById('inline-prev');if(!vid){p.innerHTML='';return;}
   const v=db.vehicles.find(x=>x.id===vid);const dr=db.users.find(x=>x.id===v.driverId);const as=db.users.find(x=>x.id===v.assistantId);
-  p.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${ib('Driver',dr?dr.name:'Unassigned')}${ib('Assistant',as?as.name:'Unassigned')}</div>`;
+  // get trip date for availability check
+  const t=db.trips.find(x=>x.id===activeTripId);
+  const conflicts=t?checkVehicleAvail(vid,t.date).filter(c=>c.id!==t.id):[];
+  const warn=conflicts.length?`<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:9px 12px;font-size:12px;color:#F87171;margin-top:8px">⚠ Vehicle already assigned on ${t.date} — Ref: ${conflicts.map(c=>c.id.toUpperCase()).join(', ')}</div>`:'';
+  p.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${ib('Driver',dr?dr.name:'Unassigned')}${ib('Assistant',as?as.name:'Unassigned')}</div>${warn}`;
 }
 function inlineAssign(tid){
   const vid=document.getElementById('inline-vsel').value;if(!vid)return;
@@ -911,8 +971,12 @@ function reassignVehicle(tid){
 }
 function previewAssign(){
   const db=gDB();const vid=document.getElementById('assign-vehicle-sel').value;const p=document.getElementById('assign-preview');
-  if(!vid){p.innerHTML='';return;}const v=db.vehicles.find(x=>x.id===vid);const dr=db.users.find(x=>x.id===v.driverId);const as=db.users.find(x=>x.id===v.assistantId);
-  p.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${ib('Driver',dr?dr.name:'—')}${ib('Assistant',as?as.name:'—')}</div>`;
+  if(!vid){p.innerHTML='';return;}
+  const v=db.vehicles.find(x=>x.id===vid);const dr=db.users.find(x=>x.id===v.driverId);const as=db.users.find(x=>x.id===v.assistantId);
+  const t=db.trips.find(x=>x.id===activeTripId);
+  const conflicts=t?checkVehicleAvail(vid,t.date).filter(c=>c.id!==t.id):[];
+  const warn=conflicts.length?`<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:9px 12px;font-size:12px;color:#F87171;margin-top:8px">⚠ Vehicle already assigned on ${t.date} — Ref: ${conflicts.map(c=>c.id.toUpperCase()).join(', ')}</div>`:'<div style="font-size:11px;color:#10B981;margin-top:6px">✓ Vehicle is free on this date</div>';
+  p.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${ib('Driver',dr?dr.name:'—')}${ib('Assistant',as?as.name:'—')}</div>${warn}`;
 }
 function doAssignVehicle(){
   const vid=document.getElementById('assign-vehicle-sel').value;
@@ -928,20 +992,38 @@ function showAssignNotify(tid){
   const as=db.users.find(u=>u.id===t.assistantId);
   const v=db.vehicles.find(x=>x.id===t.vehicleId);
   const dest=dests[t.di]?dests[t.di].n.split('/')[0].trim():'destination';
-  const msg=`*Khalorna Xpress — Trip Assignment*\n\nYou have been assigned a trip.\n\n*Details*\nRef: ${t.id.toUpperCase()}\nDate: ${t.date}\nDestination: ${dest}\nTonnage: ${t.tonnage}\nVehicle: ${v?v.plate+' · '+v.model:'—'}${t.cargoDetail?'\nCargo: '+t.cargoDetail:''}\n\nLog in to accept your assignment.\nKhalorna Xpress · 876-559-3028`;
+  const lines=[
+    '*Khalorna Xpress \u2014 Trip Assignment*','',
+    'You have been assigned a trip.','',
+    'Ref: '+t.id.toUpperCase(),
+    'Date: '+t.date,
+    'Destination: '+dest,
+    'Tonnage: '+t.tonnage,
+    'Vehicle: '+(v?v.plate+' \u00b7 '+v.model:'\u2014'),
+  ];
+  if(t.cargoDetail)lines.push('Cargo: '+t.cargoDetail);
+  lines.push('','Log in to accept your assignment.','Khalorna Xpress \u00b7 876-559-3028');
+  const msg=lines.join('\n');
   const drPhone=dr&&dr.phone?dr.phone.replace(/[^0-9]/g,''):'';
   const asPhone=as&&as.phone?as.phone.replace(/[^0-9]/g,''):'';
+  const drUrl=drPhone?'https://wa.me/'+drPhone+'?text='+encodeURIComponent(msg):'';
+  const asUrl=asPhone?'https://wa.me/'+asPhone+'?text='+encodeURIComponent(msg):'';
   const el=document.getElementById('assign-notify-sheet');if(el)el.remove();
   const sheet=document.createElement('div');
   sheet.id='assign-notify-sheet';
   sheet.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  const drBtn=drUrl
+    ?`<a href="${drUrl}" target="_blank" style="display:block;width:100%;background:#25D366;color:#fff;border-radius:12px;padding:14px;font-family:'Barlow Semi Condensed',sans-serif;font-size:17px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:10px">\uD83D\uDCF2 WhatsApp Driver \u2014 ${dr?dr.name:'Driver'}</a>`
+    :'<p style="font-size:12px;color:#F87171;margin-bottom:10px">\u26A0 No phone number on file for driver.</p>';
+  const asBtn=asUrl
+    ?`<a href="${asUrl}" target="_blank" style="display:block;width:100%;background:#25D366;color:#fff;border-radius:12px;padding:14px;font-family:'Barlow Semi Condensed',sans-serif;font-size:17px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:10px">\uD83D\uDCF2 WhatsApp Assistant \u2014 ${as?as.name:'Assistant'}</a>`
+    :'';
   sheet.innerHTML=`<div style="background:#132040;border-radius:22px 22px 0 0;width:100%;max-width:430px;padding:24px 20px 44px;animation:slideUp .28s ease">
     <div style="width:40px;height:4px;background:#243552;border-radius:2px;margin:0 auto 20px"></div>
-    <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px">✅ Truck Assigned</div>
-    <p style="font-size:13px;color:#94A3B8;margin-bottom:20px">Notify the crew via WhatsApp so they can log in and accept.</p>
-    ${drPhone?`<button onclick="window.open('https://wa.me/1${drPhone}?text='+encodeURIComponent('${msg.replace(/'/g,"\\'")}'),'_blank')" style="width:100%;background:#25D366;color:#fff;border:none;border-radius:12px;padding:14px;font-family:'Barlow Semi Condensed',sans-serif;font-size:17px;font-weight:700;cursor:pointer;margin-bottom:10px">📲 WhatsApp Driver — ${dr?dr.name:'Driver'}</button>`:'<p style="font-size:12px;color:#F87171;margin-bottom:10px">⚠ No phone number for driver.</p>'}
-    ${asPhone?`<button onclick="window.open('https://wa.me/1${asPhone}?text='+encodeURIComponent('${msg.replace(/'/g,"\\'")}'),'_blank')" style="width:100%;background:#25D366;color:#fff;border:none;border-radius:12px;padding:14px;font-family:'Barlow Semi Condensed',sans-serif;font-size:17px;font-weight:700;cursor:pointer;margin-bottom:10px">📲 WhatsApp Assistant — ${as?as.name:'Assistant'}</button>`:''}
-    <button onclick="document.getElementById('assign-notify-sheet').remove()" style="width:100%;background:#1B2E4A;color:#94A3B8;border:1.5px solid #243552;border-radius:12px;padding:13px;font-size:14px;cursor:pointer">Done — Notify Later</button>
+    <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px">\u2705 Truck Assigned</div>
+    <p style="font-size:13px;color:#94A3B8;margin-bottom:20px">Send WhatsApp to the crew so they can log in and accept.</p>
+    ${drBtn}${asBtn}
+    <button onclick="document.getElementById('assign-notify-sheet').remove()" style="width:100%;background:#1B2E4A;color:#94A3B8;border:1.5px solid #243552;border-radius:12px;padding:13px;font-size:14px;cursor:pointer">Done \u2014 Notify Later</button>
   </div>`;
   document.body.appendChild(sheet);
   sheet.addEventListener('click',e=>{if(e.target===sheet)sheet.remove();});
@@ -1548,7 +1630,7 @@ function saveBulkRates(){
 function renderAdminDestinations(){
   const db=gDB();const dests=db.destinations&&db.destinations.length?db.destinations:DEST;
   document.getElementById('admin-content').innerHTML=`
-    <div class="sec-hdr"><div class="sec-ttl">Delivery Zones</div><button class="btn-sm btn-accent" onclick="openAddDestModal()">+ Add Zone</button></div>
+    <div class="sec-hdr"><div style="display:flex;align-items:center;gap:10px"><button class="btn-sm btn-ghost" onclick="adminTab('dashboard',document.getElementById('nav-dashboard'))">← Home</button><div class="sec-ttl">Delivery Zones</div></div><button class="btn-sm btn-accent" onclick="openAddDestModal()">+ Add Zone</button></div>
     <p style="font-size:13px;color:var(--muted);margin-bottom:14px">${dests.length} zones · Edit rates for private work pricing.</p>
     ${dests.map((d,i)=>`<div class="list-item">
       <div style="font-size:22px">📍</div>
@@ -1602,9 +1684,12 @@ function saveEditDest(){
 function workerNav(role,tab,el){
   document.querySelectorAll(`#screen-${role} .nav-item`).forEach(n=>n.classList.remove('active'));
   el.classList.add('active');
+  const conId=role==='driver'?'driver-content':'asst-content';
   const sub=document.getElementById(role==='driver'?'driver-sub-bar':'asst-sub-bar');
-  sub.textContent=tab==='trips'?'My Trips':'Book a Trip';
-  if(tab==='trips')renderWorkerTrips(role==='driver'?'driver-content':'asst-content',role,ds(0));
+  const labels={trips:'My Trips',earnings:'My Earnings',book:'Book a Trip'};
+  sub.textContent=labels[tab]||tab;
+  if(tab==='trips')renderWorkerTrips(conId,role,ds(0));
+  else if(tab==='earnings')renderWorkerEarnings(conId,role);
   else renderWorkerBook(role);
 }
 function renderWorker(role){
@@ -1622,12 +1707,32 @@ function renderWorkerTrips(conId,role,sel){
   const done=trips.filter(t=>t.status==='Completed');
   const assigned=trips.filter(t=>t.status==='Assigned');
   const earn=done.reduce((s,t)=>{const r=getRate(t);return s+(isDr?r.dp:r.ap);},0);
+  // Build 7-day calendar strip
+  const dayLabels=['M','T','W','T','F','S','S'];
+  const calDays=Array.from({length:7},(_,i)=>{
+    const d=new Date(w.s+'T00:00:00');d.setDate(d.getDate()+i);
+    const ds2=d.toISOString().split('T')[0];
+    const dayTrips=trips.filter(t=>t.date===ds2);
+    const hasAssigned=dayTrips.some(t=>t.status==='Assigned');
+    const hasDone=dayTrips.some(t=>t.status==='Completed');
+    const hasActive=dayTrips.some(t=>t.status==='In Progress');
+    const isToday=ds2===new Date().toISOString().split('T')[0];
+    const dot=hasAssigned?'#FCD34D':hasDone?'#10B981':hasActive?'#F5A623':'';
+    return{ds2,label:dayLabels[i],num:d.getDate(),dot,count:dayTrips.length,isToday};
+  });
+  const calHtml=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px">
+    ${calDays.map(day=>`<div onclick="renderWorkerTrips('${conId}','${role}','${day.ds2}')" style="cursor:pointer;text-align:center;padding:8px 4px;border-radius:10px;background:${day.ds2===sel?'var(--accent)':'var(--surface)'};color:${day.ds2===sel?'#0A1628':'var(--sub)'};position:relative;transition:all .2s">
+      <div style="font-size:9px;font-weight:600;text-transform:uppercase;margin-bottom:3px">${day.label}</div>
+      <div style="font-size:16px;font-weight:700${day.isToday&&day.ds2!==sel?';color:var(--accent)':''}">${day.num}</div>
+      ${day.dot?`<div style="width:6px;height:6px;border-radius:50%;background:${day.dot};margin:3px auto 0"></div>`:'<div style="height:9px"></div>'}
+    </div>`).join('')}
+  </div>`;
   document.getElementById(conId).innerHTML=`
-    <div class="card" style="margin-bottom:14px">
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:6px">Pick any date in the week</div>
-      <input type="date" class="form-input" value="${sel}" onchange="renderWorkerTrips('${conId}','${role}',this.value)"/>
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:10px">📅 ${w.lb}</div>
+      ${calHtml}
+      <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px">Tap a day to view · <span style="color:#FCD34D">●</span> accept <span style="color:#F5A623">●</span> active <span style="color:#10B981">●</span> done</div>
     </div>
-    <div style="font-size:12px;color:var(--muted);text-align:center;margin-bottom:12px">📅 ${w.lb}</div>
     ${assigned.length?`<div class="assign-banner">
       <div style="font-weight:700;font-size:14px;margin-bottom:3px">⚡ ${assigned.length} trip${assigned.length>1?'s':''} awaiting your acceptance</div>
       <div style="font-size:12px;color:var(--sub)">Tap "✅ Accept Trip" below to confirm you are taking the delivery.</div>
@@ -1671,9 +1776,143 @@ function renderWorkerTrips(conId,role,sel){
         </div>
         ${isAsgn?`<button class="btn-primary" style="margin-top:12px" onclick="confirmAssignment('${t.id}','${conId}','${role}','${sel}')">✅ Accept Trip</button>`:''}
       </div>`;
-    }).join(''):'<div class="empty-state"><div class="ei">📭</div><p>No trips this week</p></div>'}
+    }).join(''):'<div class="empty-state"><div class="ei">📭</div><p>No trips on this day</p></div>'}
   `;
 }
+// ── WORKER EARNINGS HISTORY (Driver + Assistant) ──
+function renderWorkerEarnings(conId,role){
+  const db=gDB();const isDr=role==='driver';const dests=gDEST();
+  const today=new Date();
+  // Build 4 rolling weeks: current + 3 prior
+  const weeks=Array.from({length:4},(_,i)=>{
+    const ref=new Date(today);ref.setDate(today.getDate()-(i*7));
+    const w=weekRange(ref.toISOString().split('T')[0]);
+    const wTrips=db.trips.filter(t=>
+      t.date>=w.s&&t.date<=w.e&&
+      t.status==='Completed'&&
+      (isDr?t.driverId===CU.id:t.assistantId===CU.id)
+    );
+    const earned=wTrips.reduce((s,t)=>{const r=getRate(t);return s+(isDr?r.dp:r.ap);},0);
+    const paid=wTrips.filter(t=>isDr?t.driverPaid:t.asstPaid).reduce((s,t)=>{const r=getRate(t);return s+(isDr?r.dp:r.ap);},0);
+    const outstanding=earned-paid;
+    return{...w,trips:wTrips,earned,paid,outstanding,isCurrent:i===0};
+  });
+  const allEarned=weeks.reduce((s,w)=>s+w.earned,0);
+  const allOutstanding=weeks.reduce((s,w)=>s+w.outstanding,0);
+  document.getElementById(conId).innerHTML=`
+    <div class="earn-banner" style="margin-bottom:14px">
+      <div style="font-size:11px;color:rgba(245,166,35,.7);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:4px">4-Week Total</div>
+      <div class="earn-amt">${jmd(allEarned)}</div>
+      <div style="display:flex;gap:16px;margin-top:10px">
+        <div><div style="font-size:18px;font-weight:700;color:#10B981">${jmd(allEarned-allOutstanding)}</div><div style="font-size:11px;color:var(--muted)">Paid Out</div></div>
+        <div><div style="font-size:18px;font-weight:700;color:#F5A623">${jmd(allOutstanding)}</div><div style="font-size:11px;color:var(--muted)">Outstanding</div></div>
+      </div>
+    </div>
+    ${weeks.map(w=>`
+      <div class="card" style="margin-bottom:10px${w.isCurrent?';border-color:rgba(245,166,35,.35)':''}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:${w.isCurrent?'var(--accent)':'var(--text)'}">${w.isCurrent?'This Week':'Week of '+w.lb.split('–')[0].trim()}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">${w.lb}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--accent)">${jmd(w.earned)}</div>
+            <div style="font-size:11px;color:var(--muted)">${w.trips.length} trip${w.trips.length!==1?'s':''}</div>
+          </div>
+        </div>
+        ${w.earned>0?`<div style="display:flex;gap:8px">
+          <div style="flex:1;background:var(--surface);border-radius:8px;padding:8px;text-align:center">
+            <div style="font-size:13px;font-weight:700;color:#10B981">${jmd(w.paid)}</div>
+            <div style="font-size:10px;color:var(--muted)">Paid</div>
+          </div>
+          <div style="flex:1;background:var(--surface);border-radius:8px;padding:8px;text-align:center">
+            <div style="font-size:13px;font-weight:700;color:#F5A623">${jmd(w.outstanding)}</div>
+            <div style="font-size:10px;color:var(--muted)">Outstanding</div>
+          </div>
+        </div>`:'<div style="font-size:12px;color:var(--muted);text-align:center;padding:6px 0">No completed trips this week</div>'}
+        ${w.trips.length?`<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+          ${w.trips.map(t=>{const d=dests[t.di];const r=getRate(t);const pay=isDr?r.dp:r.ap;const wp=isDr?t.driverPaid:t.asstPaid;
+            return`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(36,53,82,.5)">
+              <div>
+                <div style="font-size:12px;font-weight:600">${d?d.n.split('/')[0].trim():'—'}</div>
+                <div style="font-size:11px;color:var(--muted)">${t.date} · ${t.tonnage}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:13px;font-weight:700;color:var(--accent)">${jmd(pay)}</div>
+                <span class="badge ${wp?'bdg-paid':'bdg-unpaid'}" style="font-size:9px">${wp?'Paid':'Pending'}</span>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`:'' }
+      </div>`).join('')}
+  `;
+}
+
+// ── CLIENT BOOKINGS SUMMARY ──
+function renderMyBookings(){
+  const db=gDB();const dests=gDEST();
+  // filter to this client's bookings
+  const myTrips=[...db.trips]
+    .filter(t=>CU&&(t.clientName===CU.name||(CU.role==='client'&&t.clientId===CU.id)||(CU.role==='client'&&t.clientPhone&&CU.phone&&t.clientPhone===CU.phone)))
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  // if no CU-linked trips fall back to all (admin seeded data compatibility)
+  const trips=myTrips.length?myTrips:[...db.trips].sort((a,b)=>b.date.localeCompare(a.date));
+  const totalSpend=trips.reduce((s,t)=>s+getRate(t).price,0);
+  const paid=trips.filter(t=>t.pstatus==='Paid').reduce((s,t)=>s+getRate(t).price,0);
+  const outstanding=totalSpend-paid;
+  const completed=trips.filter(t=>t.status==='Completed').length;
+  document.getElementById('client-content').innerHTML=`
+    <div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,#132040,#1B2E4A);border-color:rgba(245,166,35,.25)">
+      <div style="font-size:11px;color:rgba(245,166,35,.8);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:10px">Your Account Summary</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div style="background:rgba(10,22,40,.4);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:26px;font-weight:800;color:var(--accent)">${trips.length}</div>
+          <div style="font-size:11px;color:var(--muted)">Total Trips</div>
+        </div>
+        <div style="background:rgba(10,22,40,.4);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:26px;font-weight:800;color:#10B981">${completed}</div>
+          <div style="font-size:11px;color:var(--muted)">Completed</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid rgba(36,53,82,.8)">
+        <div>
+          <div style="font-size:11px;color:var(--muted)">Total Invoiced</div>
+          <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--text)">${jmd(totalSpend)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--muted)">Outstanding</div>
+          <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:20px;font-weight:800;color:${outstanding>0?'var(--accent)':'#10B981'}">${jmd(outstanding)}</div>
+        </div>
+      </div>
+    </div>
+    <div class="sec-hdr"><div class="sec-ttl">Trip History</div></div>
+    ${trips.length?trips.map(t=>{
+      const d=dests[t.di];const r=getRate(t);
+      return`<div class="trip-card" style="cursor:default">
+        <div class="trip-hdr"><div class="trip-dest">${d?d.n.split('/')[0].trim():'-'}</div>${badge(t.status)}</div>
+        <div class="trip-meta">
+          <div class="trip-meta-i">📅 <span>${t.date}</span></div>
+          <div class="trip-meta-i">⚖️ <span>${t.tonnage}</span></div>
+          <div class="trip-meta-i">🔖 <span>${t.id.toUpperCase()}</span></div>
+        </div>
+        ${t.pod?`<div style="margin-top:6px;font-size:11px;color:#34D399;background:rgba(16,185,129,.08);border-radius:6px;padding:5px 8px">✓ Delivered · ${t.pod.time||''}</div>`:''}
+        <div style="margin-top:8px;display:flex;gap:6px;align-items:center;justify-content:space-between">
+          <span class="badge ${t.pstatus==='Paid'?'bdg-paid':'bdg-unpaid'}">${t.pstatus}</span>
+          <span style="font-family:'Barlow Semi Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--accent)">${jmd(r.price)}</span>
+        </div>
+        ${t.status==='Completed'?`<button class="btn-sm btn-blue" style="width:100%;padding:9px;margin-top:10px;color:#fff" onclick="dlInvoice('${t.id}')">📄 Download Invoice</button>`:''}
+      </div>`;
+    }).join(''):'<div class="empty-state"><div class="ei">📭</div><p>No bookings yet</p></div>'}
+  `;
+}
+
+// ── VEHICLE AVAILABILITY CHECK ──
+function checkVehicleAvail(vid,date){
+  // returns array of conflicting trip refs on same date
+  const db=gDB();
+  return db.trips.filter(t=>t.vehicleId===vid&&t.date===date&&t.status!=='Completed');
+}
+
 function confirmAssignment(tid,conId,role,sel){
   const db=gDB();const dests=gDEST();const t=db.trips.find(x=>x.id===tid);if(!t)return;
   const dest=dests[t.di]?dests[t.di].n.split('/')[0].trim():'your destination';
@@ -1690,10 +1929,10 @@ function confirmAssignment(tid,conId,role,sel){
   const cPhone=t.clientPhone?t.clientPhone.replace(/[^0-9]/g,''):'';
   const aPhone=admin&&admin.phone?admin.phone.replace(/[^0-9]/g,''):'';
   const cBtn=cPhone
-    ?'<a href="https://wa.me/1'+cPhone+'?text='+encodeURIComponent(clientMsg)+'" target="_blank" style="display:block;width:100%;background:#25D366;color:#fff;border-radius:13px;padding:16px;font-family:\'Barlow Semi Condensed\',sans-serif;font-size:17px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:10px">\uD83D\uDCF2 Notify Client \u2014 '+t.clientName+'</a>'
+    ?'<a href="https://wa.me/'+cPhone+'?text='+encodeURIComponent(clientMsg)+'" target="_blank" style="display:block;width:100%;background:#25D366;color:#fff;border-radius:13px;padding:16px;font-family:\'Barlow Semi Condensed\',sans-serif;font-size:17px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:10px">\uD83D\uDCF2 Notify Client \u2014 '+t.clientName+'</a>'
     :'<div style="background:rgba(239,68,68,.1);border-radius:11px;padding:12px;font-size:12px;color:#F87171;margin-bottom:10px;text-align:center">No phone on file for client</div>';
   const aBtn=aPhone
-    ?'<a href="https://wa.me/1'+aPhone+'?text='+encodeURIComponent(adminMsg)+'" target="_blank" style="display:block;width:100%;background:#3B82F6;color:#fff;border-radius:13px;padding:16px;font-family:\'Barlow Semi Condensed\',sans-serif;font-size:17px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:10px">\uD83D\uDCF2 Notify Admin</a>'
+    ?'<a href="https://wa.me/'+aPhone+'?text='+encodeURIComponent(adminMsg)+'" target="_blank" style="display:block;width:100%;background:#3B82F6;color:#fff;border-radius:13px;padding:16px;font-family:\'Barlow Semi Condensed\',sans-serif;font-size:17px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:10px">\uD83D\uDCF2 Notify Admin</a>'
     :'';
   document.getElementById(conId).innerHTML=
     '<div style="text-align:center;padding:36px 16px 16px">'
@@ -1855,7 +2094,7 @@ function submitBooking(){
   const notes=document.getElementById('b-notes').value.trim();
   if(!name||!phone||!date){document.getElementById('book-alert').innerHTML='<div class="alert alert-err">Name, phone and date required.</div>';return;}
   const id='t'+(++db.nid);
-  db.trips.push({id,clientName:name,clientPhone:phone,di,tonnage:ton,ctype:'private',vehicleId:null,driverId:null,assistantId:null,status:'Booked',date,notes,pstatus:'Unpaid',driverPaid:false,asstPaid:false});
+  db.trips.push({id,clientName:name,clientPhone:phone,di,tonnage:ton,ctype:'private',vehicleId:null,driverId:null,assistantId:null,status:'Booked',date,notes,cargoDetail:'',pstatus:'Unpaid',driverPaid:false,asstPaid:false,pod:null,notified:{}});
   sDB(db);
   const d=dests[di];
   document.getElementById('client-content').innerHTML=`
@@ -1874,29 +2113,6 @@ function submitBooking(){
     </div>
   `;
 }
-function renderMyBookings(){
-  const db=gDB();const dests=gDEST();const trips=[...db.trips].sort((a,b)=>b.date.localeCompare(a.date));
-  document.getElementById('client-content').innerHTML=`
-    <div class="sec-hdr"><div class="sec-ttl">All Bookings</div></div>
-    ${trips.length?trips.map(t=>{
-      const d=dests[t.di];const r=getRate(t);
-      return`<div class="trip-card" style="cursor:default">
-        <div class="trip-hdr"><div class="trip-dest">${d?d.n.split('/')[0].trim():'-'}</div>${badge(t.status)}</div>
-        <div class="trip-meta">
-          <div class="trip-meta-i">📅 <span>${t.date}</span></div>
-          <div class="trip-meta-i">⚖️ <span>${t.tonnage}</span></div>
-          <div class="trip-meta-i">🔖 <span>${t.id.toUpperCase()}</span></div>
-        </div>
-        <div style="margin-top:8px;display:flex;gap:6px;align-items:center;justify-content:space-between">
-          <span class="badge ${t.pstatus==='Paid'?'bdg-paid':'bdg-unpaid'}">${t.pstatus}</span>
-          <span style="font-family:'Barlow Semi Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--accent)">${jmd(r.price)}</span>
-        </div>
-        ${t.status==='Completed'?`<button class="btn-sm btn-blue" style="width:100%;padding:9px;margin-top:10px;color:#fff" onclick="dlInvoice('${t.id}')">📄 Download Invoice</button>`:''}
-      </div>`;
-    }).join(''):'<div class="empty-state"><div class="ei">📭</div><p>No bookings yet</p></div>'}
-  `;
-}
-
 // ── PRINT / DOWNLOAD ──
 function printDoc(html){
   const w=window.open('','_blank');
@@ -1998,19 +2214,69 @@ function sendPODToClient(tid){
   const cargo=t.cargoDetail?`\nCargo: ${t.cargoDetail}`:'';
   const photoNote=t.pod.photo?'\n📷 Delivery photo has been taken and is on file.':'';
   const msg=`✅ *Khalorna Xpress — Delivery Confirmed*\n\nHello ${t.clientName},\n\nYour delivery has been completed successfully.\n\n*Trip Details*\nRef: ${t.id.toUpperCase()}\nDestination: ${dest}\nDate: ${t.date}${cargo}\nReceived by: ${t.pod.note}\nDelivery time: ${t.pod.time}${photoNote}\n\nThank you for choosing Khalorna Xpress Ltd.\nFor any queries call 876-559-3028.`;
-  window.open(`https://wa.me/1${phone}?text=${encodeURIComponent(msg)}`,'_blank');
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
 }
 
 // ── NOTIFICATIONS ──
 function sendNotification(tid){
   const db=gDB();const t=db.trips.find(x=>x.id===tid);if(!t)return;
-  const pending=db.notifications.find(n=>n.tripId===tid&&n.status===t.status&&!n.sent);
-  const msg=pending?pending.msg:`Trip to ${gDEST()[t.di]?gDEST()[t.di].n.split('/')[0].trim():'destination'} — Status: ${t.status}`;
+  const pending=(db.notifications||[]).find(n=>n.tripId===tid&&n.status===t.status&&!n.sent);
+  const dests=gDEST();const dest=dests[t.di]?dests[t.di].n.split('/')[0].trim():'destination';
+  const msg=pending?pending.msg:('Khalorna Xpress Update\n\nTrip to '+dest+' — Status: '+t.status+'\nRef: '+t.id.toUpperCase()+'\n\nKhalorna Xpress · 876-559-3028');
   const phone=(t.clientPhone||'').replace(/[^0-9]/g,'');
-  const waUrl=`https://wa.me/1${phone}?text=${encodeURIComponent('Khalorna Xpress Update\n\n'+msg+'\n\nRef: '+t.id.toUpperCase())}`;
+  if(!phone){alert('No client phone number on file for this trip.');return;}
   if(pending){pending.sent=true;sDB(db);}
-  window.open(waUrl,'_blank');
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank');
   closeModal('modal-trip');
+}
+
+// ── NOTIFICATION INBOX ──
+function renderAdminInbox(){
+  const db=gDB();const dests=gDEST();
+  const notifs=[...(db.notifications||[])].sort((a,b)=>b.ts.localeCompare(a.ts));
+  const unsent=notifs.filter(n=>!n.sent).length;
+  document.getElementById('admin-content').innerHTML=`
+    <div class="sec-hdr">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn-sm btn-ghost" onclick="adminTab('dashboard',document.getElementById('nav-dashboard'))">← Home</button>
+        <div class="sec-ttl">Notifications</div>
+      </div>
+      ${unsent>0?`<span class="badge bdg-unpaid">${unsent} pending</span>`:'<span class="badge bdg-paid">All sent</span>'}
+    </div>
+    ${notifs.length===0?'<div class="empty-state"><div class="ei">🔔</div><p>No notifications yet.<br>They appear here when trip statuses change.</p></div>':
+    notifs.map(n=>{
+      const t=db.trips.find(x=>x.id===n.tripId);
+      const dest=t?dests[t.di]?dests[t.di].n.split('/')[0].trim():'—':'—';
+      const phone=(n.clientPhone||'').replace(/[^0-9]/g,'');
+      const when=new Date(n.ts).toLocaleString('en-JM',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+      return`<div class="card" style="margin-bottom:10px;${n.sent?'opacity:.7':'border-color:rgba(245,166,35,.3)'}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <div style="font-weight:600;font-size:14px">${n.clientName}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">${dest} · ${n.status} · ${when}</div>
+          </div>
+          <span class="badge ${n.sent?'bdg-paid':'bdg-unpaid'}">${n.sent?'Sent':'Pending'}</span>
+        </div>
+        <div style="font-size:12px;color:var(--sub);background:var(--surface);border-radius:8px;padding:10px;margin-bottom:10px;white-space:pre-wrap">${n.msg.slice(0,120)}${n.msg.length>120?'…':''}</div>
+        ${!n.sent&&phone?`<a href="https://wa.me/${phone}?text=${encodeURIComponent(n.msg)}" target="_blank" onclick="markNotifSent('${n.id}')" style="display:block;text-align:center;background:#25D366;color:#fff;border-radius:10px;padding:10px;font-weight:700;font-size:14px;text-decoration:none">📲 Send via WhatsApp</a>`:''}
+        ${n.sent?`<button class="btn-sm btn-ghost" style="width:100%;padding:8px" onclick="resendNotif('${n.id}')">Resend</button>`:''}
+      </div>`;
+    }).join('')}
+  `;
+}
+function markNotifSent(nid){
+  const db=gDB();const n=(db.notifications||[]).find(x=>x.id===nid);
+  if(n){n.sent=true;sDB(db);}
+  // update badge
+  const unsent=(db.notifications||[]).filter(x=>!x.sent).length;
+  const bell=document.getElementById('notif-badge');
+  if(bell){bell.style.display=unsent>0?'flex':'none';if(unsent>0)bell.textContent=unsent;}
+}
+function resendNotif(nid){
+  const db=gDB();const n=(db.notifications||[]).find(x=>x.id===nid);if(!n)return;
+  const phone=(n.clientPhone||'').replace(/[^0-9]/g,'');
+  if(!phone){alert('No phone number for this notification.');return;}
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(n.msg),'_blank');
 }
 
 // ── EXPENSES ──
@@ -2020,7 +2286,7 @@ function renderAdminExpenses(){
   const byCat={};exps.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+e.amount;});
   const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
   document.getElementById('admin-content').innerHTML=`
-    <div class="sec-hdr"><div class="sec-ttl">Expenses</div><button class="btn-sm btn-accent" onclick="openAddExpenseModal()">+ Log Expense</button></div>
+    <div class="sec-hdr"><div style="display:flex;align-items:center;gap:10px"><button class="btn-sm btn-ghost" onclick="adminTab('dashboard',document.getElementById('nav-dashboard'))">← Home</button><div class="sec-ttl">Expenses</div></div><button class="btn-sm btn-accent" onclick="openAddExpenseModal()">+ Log Expense</button></div>
     <div class="card" style="margin-bottom:14px">
       <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:6px">Total Expenses</div>
       <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--red)">${jmd(total)}</div>
@@ -2070,7 +2336,7 @@ function delExpense(eid){
 function renderAdminRecurring(){
   const db=gDB();const recs=db.recurring||[];const dests=gDEST();
   document.getElementById('admin-content').innerHTML=`
-    <div class="sec-hdr"><div class="sec-ttl">Recurring Trips</div></div>
+    <div class="sec-hdr"><div style="display:flex;align-items:center;gap:10px"><button class="btn-sm btn-ghost" onclick="adminTab('dashboard',document.getElementById('nav-dashboard'))">← Home</button><div class="sec-ttl">Recurring Trips</div></div></div>
     <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Scheduled trips auto-generate on their next date. Tap "Generate Now" to create the next booking.</p>
     ${recs.length?recs.map(r=>{
       const d=dests[r.di];
@@ -2127,7 +2393,7 @@ function renderAdminReports(){
   const payroll=db.trips.filter(t=>t.status==='Completed').reduce((s,t)=>{const r=getRate(t);return s+r.dp+r.ap;},0);
   const net=rev-exp-payroll;
   document.getElementById('admin-content').innerHTML=`
-    <div class="sec-hdr"><div class="sec-ttl">Reports</div></div>
+    <div class="sec-hdr"><div style="display:flex;align-items:center;gap:10px"><button class="btn-sm btn-ghost" onclick="adminTab('dashboard',document.getElementById('nav-dashboard'))">← Home</button><div class="sec-ttl">Reports</div></div></div>
     <div class="card" style="margin-bottom:14px">
       <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:12px">All-Time Summary</div>
       <div class="stat-grid" style="margin-bottom:0">
