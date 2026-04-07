@@ -1653,7 +1653,7 @@ function showPayrollDetail(uid,wS,wE){
       </div>
     </div>
     ${trips.length?trips.map(t=>{
-      const r=getRate(t);const pay=isDr?r.dp:r.ap;const wp=isDr?t.driverPaid:t.asstPaid;
+      const dn=tripDestName(t);const r=getRate(t);const pay=isDr?r.dp:r.ap;const wp=isDr?t.driverPaid:t.asstPaid;
       return`<div class="card" style="margin-bottom:10px">
         <div class="trip-hdr"><div class="trip-dest">${dn}</div>${badge(t.status)}</div>
         <div class="trip-meta" style="margin-bottom:8px">
