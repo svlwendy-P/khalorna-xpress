@@ -654,40 +654,46 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
 
 </div>
 <script>
+// ── RATE STRUCTURE ──
+// p   = Private Work flat client rate
+// d5/a5, d7/a7, d10/a10 = Private Work driver/asst payouts per tonnage
+// w5/w7/w10  = Tonnage Contract client rates per tonnage
+// hp5/hp7/hp10 = HI Pro Contract client rates (loaded from HI_Pro_rate.xlsx via bulk upload)
+// hpd5/hpa5, hpd7/hpa7, hpd10/hpa10 = HI Pro driver/asst payouts per tonnage
 const DEST=[
-  {n:"Downtown",p:20000,w5:14261,d5:2000,a5:2000,w7:18057,d7:2500,a7:2500,w10:23543,d10:3500,a10:3500},
-  {n:"Kingston / Round Town / Half Way Tree / Liguanea / JacksHill",p:20000,w5:13905,d5:2000,a5:2000,w7:17363,d7:2500,a7:2500,w10:22562,d10:3500,a10:3500},
-  {n:"Spanish Town / Portmore / Ferry",p:20000,w5:10885,d5:1500,a5:1500,w7:14146,d7:3000,a7:2500,w10:17618,d10:4500,a10:4000},
-  {n:"Old Harbour / Old Harbour Bay / Stony Hill / Port Royal / Harbour View / Airport / Bogwalk / Linstead / Riversdale / Papine / Kitson Town",p:20000,w5:15120,d5:2500,a5:2000,w7:17590,d7:3000,a7:2500,w10:24804,d10:4000,a10:3500},
-  {n:"Maypen / Four Paths / Ewarton / New Longsville / Gordon Town / RedHills / SligoVille",p:25000,w5:17012,d5:2000,a5:2000,w7:19884,d7:3000,a7:3000,w10:27974,d10:4500,a10:4000},
-  {n:"Tollgate / Clarendon Park / Above Rocks / BrownsHall / Friendship Gap",p:28000,w5:22129,d5:2500,a5:2000,w7:25799,d7:3500,a7:3000,w10:35590,d10:5500,a10:4500},
-  {n:"Lionel Town / Mitchell Town / Rocky Point / Race Course / Milk River / Worthy Park / Lawrence Tavern / Golden Spring / Vere / Portland Cottage / Irish Town",p:26000,w5:20269,d5:2500,a5:2000,w7:23847,d7:3000,a7:3000,w10:32343,d10:5000,a10:4500},
-  {n:"Chapleton / Summerfield / Rock River / Alston / Aenon Town / Mocho / Croft Hill / Mavis Bank",p:29000,w5:23847,d5:3500,a5:3000,w7:27824,d7:4000,a7:3500,w10:38046,d10:5500,a10:5000},
-  {n:"Porus / Williamsfield / Royal Flat / Mandeville / Newport / Kemps Hill / Kellits",p:29000,w5:27246,d5:3500,a5:3000,w7:31710,d7:4500,a7:4000,w10:43208,d10:6500,a10:5500},
-  {n:"Wait-A-Bit / Albert Town",p:36000,w5:30520,d5:3500,a5:3000,w7:34985,d7:4000,a7:3500,w10:46380,d10:6500,a10:5500},
-  {n:"Spaldings / Christiana / Coleyville / Troy / Frankfield / Thompson Town",p:33000,w5:27246,d5:3500,a5:3000,w7:31710,d7:4000,a7:4000,w10:43208,d10:6500,a10:5500},
-  {n:"Junction / Bull Savannah / Top Hill / Munroe / Watchwell / Mountain Side / Ballards Valley / Malvern / New Forest / Alligator Pond",p:40000,w5:33029,d5:3500,a5:3000,w7:38480,d7:4000,a7:3500,w10:52641,d10:6500,a10:5500},
-  {n:"Maggoty / Siloah / Balaclava / Lacovia / Newton",p:40000,w5:33029,d5:3500,a5:3000,w7:38480,d7:4000,a7:3500,w10:52641,d10:6500,a10:5500},
-  {n:"Santa Cruz / Gutters",p:37000,w5:30555,d5:3500,a5:3000,w7:36006,d7:4000,a7:3500,w10:49204,d10:6500,a10:5500},
-  {n:"Black River / New Market / Springfield / Treasure Beach / Southfield",p:42000,w5:34679,d5:3500,a5:3000,w7:40462,d7:4500,a7:4000,w10:55205,d10:6500,a10:5500},
-  {n:"Sav-La-Mar / Grange Hill / Frome / Whithorn / Petersfield / Cornwall Mountain / Bethel Town / Whitehouse / Ginger Hill / Seaford Town",p:49000,w5:39636,d5:5500,a5:5000,w7:47895,d7:6500,a7:5500,w10:65602,d10:7500,a10:7000},
-  {n:"Lucea / Kingsvale / Maroon Town / Hopewell / Round Hill",p:52000,w5:43761,d5:5000,a5:4500,w7:51032,d7:7000,a7:6500,w10:69606,d10:8500,a10:8000},
-  {n:"Negril / Little London / Darliston / Delveland",p:53000,w5:44595,d5:5500,a5:5000,w7:52852,d7:7000,a7:6500,w10:72003,d10:8500,a10:8000},
-  {n:"Green Island / Orange Bay",p:56000,w5:47870,d5:6000,a5:5500,w7:56126,d7:7000,a7:6500,w10:75177,d10:8500,a10:8000},
-  {n:"Montego Bay / Wakefield",p:48000,w5:40428,d5:6000,a5:4500,w7:46967,d7:6000,a7:5500,w10:61005,d10:7000,a10:6000},
-  {n:"Cambridge / Lambs River / Anchovy",p:51000,w5:42914,d5:5000,a5:4500,w7:49921,d7:6000,a7:5500,w10:64325,d10:7500,a10:7000},
-  {n:"Falmouth / Clarks Town / Jackson Bay / Ulster Spring / Cave Valley / Alexandria",p:41000,w5:33029,d5:3500,a5:3000,w7:39476,d7:4500,a7:4000,w10:53926,d10:6000,a10:5500},
-  {n:"Claremont / Bamboo / Browns Town / Runaway Bay / James Hill / Priory / Boscobel",p:37000,w5:30555,d5:3500,a5:3000,w7:35834,d7:4000,a7:3500,w10:48802,d10:6500,a10:5500},
-  {n:"St. Anns Bay / Ocho Rios / Retreat / Gayle / Oracabessa / Tower Isle / Jacks River",p:35000,w5:30555,d5:3500,a5:3000,w7:35834,d7:4000,a7:3500,w10:48802,d10:6500,a10:5500},
-  {n:"Discovery Bay / Braco / Duncans",p:39000,w5:32239,d5:3500,a5:3000,w7:37809,d7:4000,a7:3500,w10:51490,d10:6500,a10:5000},
-  {n:"Guys Hill / Glengoffe / Polly Ground",p:25000,w5:19788,d5:3500,a5:3000,w7:22594,d7:4000,a7:3500,w10:29570,d10:5500,a10:5000},
-  {n:"Clonmel / Richmond / Highgate / Islington / Port Maria / Carron Hall",p:30000,w5:23514,d5:3500,a5:3000,w7:27882,d7:4000,a7:3500,w10:38115,d10:5500,a10:5000},
-  {n:"Annotto Bay / Windsor Castle / Buff Bay / Skibo",p:28000,w5:21473,d5:3500,a5:3000,w7:26090,d7:4000,a7:3500,w10:35519,d10:5500,a10:5000},
-  {n:"Hope Bay / St. Margarets Bay / Port Antonio / Fellowship / Dragon Bay",p:42000,w5:35268,d5:3500,a5:3000,w7:41364,d7:4500,a7:4000,w10:54076,d10:6500,a10:5500},
-  {n:"Boston / Long Bay",p:46000,w5:38574,d5:4000,a5:3500,w7:44902,d7:5000,a7:4500,w10:59173,d10:6500,a10:6500},
-  {n:"Easington / Seaforth / Morant Bay / Lyssons / Airy Castle",p:30000,w5:24491,d5:3500,a5:3000,w7:28710,d7:4000,a7:3500,w10:38084,d10:5500,a10:5000},
-  {n:"Stokes Hall / Trinityville / Bath / Bowden / Golden Grove",p:38000,w5:30555,d5:3500,a5:3000,w7:35834,d7:4000,a7:3500,w10:48802,d10:6500,a10:5500},
-  {n:"Manchionel / Hectors River",p:41000,w5:33856,d5:3600,a5:4000,w7:39687,d7:4500,a7:4000,w10:53841,d10:6500,a10:5500},
+  {n:"Downtown",p:20000,d5:2000,a5:2000,d7:2500,a7:2500,d10:3500,a10:3500,w5:14261,w7:18057,w10:23543,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Kingston / Round Town / Half Way Tree / Liguanea / JacksHill",p:20000,d5:2000,a5:2000,d7:2500,a7:2500,d10:3500,a10:3500,w5:13905,w7:17363,w10:22562,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Spanish Town / Portmore / Ferry",p:20000,d5:1500,a5:1500,d7:3000,a7:2500,d10:4500,a10:4000,w5:10885,w7:14146,w10:17618,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Old Harbour / Old Harbour Bay / Stony Hill / Port Royal / Harbour View / Airport / Bogwalk / Linstead / Riversdale / Papine / Kitson Town",p:20000,d5:2500,a5:2000,d7:3000,a7:2500,d10:4000,a10:3500,w5:15120,w7:17590,w10:24804,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Maypen / Four Paths / Ewarton / New Longsville / Gordon Town / RedHills / SligoVille",p:25000,d5:2000,a5:2000,d7:3000,a7:3000,d10:4500,a10:4000,w5:17012,w7:19884,w10:27974,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Tollgate / Clarendon Park / Above Rocks / BrownsHall / Friendship Gap",p:28000,d5:2500,a5:2000,d7:3500,a7:3000,d10:5500,a10:4500,w5:22129,w7:25799,w10:35590,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Lionel Town / Mitchell Town / Rocky Point / Race Course / Milk River / Worthy Park / Lawrence Tavern / Golden Spring / Vere / Portland Cottage / Irish Town",p:26000,d5:2500,a5:2000,d7:3000,a7:3000,d10:5000,a10:4500,w5:20269,w7:23847,w10:32343,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Chapleton / Summerfield / Rock River / Alston / Aenon Town / Mocho / Croft Hill / Mavis Bank",p:29000,d5:3500,a5:3000,d7:4000,a7:3500,d10:5500,a10:5000,w5:23847,w7:27824,w10:38046,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Porus / Williamsfield / Royal Flat / Mandeville / Newport / Kemps Hill / Kellits",p:29000,d5:3500,a5:3000,d7:4500,a7:4000,d10:6500,a10:5500,w5:27246,w7:31710,w10:43208,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Wait-A-Bit / Albert Town",p:36000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5500,w5:30520,w7:34985,w10:46380,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Spaldings / Christiana / Coleyville / Troy / Frankfield / Thompson Town",p:33000,d5:3500,a5:3000,d7:4000,a7:4000,d10:6500,a10:5500,w5:27246,w7:31710,w10:43208,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Junction / Bull Savannah / Top Hill / Munroe / Watchwell / Mountain Side / Ballards Valley / Malvern / New Forest / Alligator Pond",p:40000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5500,w5:33029,w7:38480,w10:52641,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Maggoty / Siloah / Balaclava / Lacovia / Newton",p:40000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5500,w5:33029,w7:38480,w10:52641,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Santa Cruz / Gutters",p:37000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5500,w5:30555,w7:36006,w10:49204,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Black River / New Market / Springfield / Treasure Beach / Southfield",p:42000,d5:3500,a5:3000,d7:4500,a7:4000,d10:6500,a10:5500,w5:34679,w7:40462,w10:55205,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Sav-La-Mar / Grange Hill / Frome / Whithorn / Petersfield / Cornwall Mountain / Bethel Town / Whitehouse / Ginger Hill / Seaford Town",p:49000,d5:5500,a5:5000,d7:6500,a7:5500,d10:7500,a10:7000,w5:39636,w7:47895,w10:65602,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Lucea / Kingsvale / Maroon Town / Hopewell / Round Hill",p:52000,d5:5000,a5:4500,d7:7000,a7:6500,d10:8500,a10:8000,w5:43761,w7:51032,w10:69606,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Negril / Little London / Darliston / Delveland",p:53000,d5:5500,a5:5000,d7:7000,a7:6500,d10:8500,a10:8000,w5:44595,w7:52852,w10:72003,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Green Island / Orange Bay",p:56000,d5:6000,a5:5500,d7:7000,a7:6500,d10:8500,a10:8000,w5:47870,w7:56126,w10:75177,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Montego Bay / Wakefield",p:48000,d5:6000,a5:4500,d7:6000,a7:5500,d10:7000,a10:6000,w5:40428,w7:46967,w10:61005,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Cambridge / Lambs River / Anchovy",p:51000,d5:5000,a5:4500,d7:6000,a7:5500,d10:7500,a10:7000,w5:42914,w7:49921,w10:64325,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Falmouth / Clarks Town / Jackson Bay / Ulster Spring / Cave Valley / Alexandria",p:41000,d5:3500,a5:3000,d7:4500,a7:4000,d10:6000,a10:5500,w5:33029,w7:39476,w10:53926,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Claremont / Bamboo / Browns Town / Runaway Bay / James Hill / Priory / Boscobel",p:37000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5500,w5:30555,w7:35834,w10:48802,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"St. Anns Bay / Ocho Rios / Retreat / Gayle / Oracabessa / Tower Isle / Jacks River",p:35000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5500,w5:30555,w7:35834,w10:48802,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Discovery Bay / Braco / Duncans",p:39000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5000,w5:32239,w7:37809,w10:51490,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Guys Hill / Glengoffe / Polly Ground",p:25000,d5:3500,a5:3000,d7:4000,a7:3500,d10:5500,a10:5000,w5:19788,w7:22594,w10:29570,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Clonmel / Richmond / Highgate / Islington / Port Maria / Carron Hall",p:30000,d5:3500,a5:3000,d7:4000,a7:3500,d10:5500,a10:5000,w5:23514,w7:27882,w10:38115,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Annotto Bay / Windsor Castle / Buff Bay / Skibo",p:28000,d5:3500,a5:3000,d7:4000,a7:3500,d10:5500,a10:5000,w5:21473,w7:26090,w10:35519,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Hope Bay / St. Margarets Bay / Port Antonio / Fellowship / Dragon Bay",p:42000,d5:3500,a5:3000,d7:4500,a7:4000,d10:6500,a10:5500,w5:35268,w7:41364,w10:54076,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Boston / Long Bay",p:46000,d5:4000,a5:3500,d7:5000,a7:4500,d10:6500,a10:6500,w5:38574,w7:44902,w10:59173,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Easington / Seaforth / Morant Bay / Lyssons / Airy Castle",p:30000,d5:3500,a5:3000,d7:4000,a7:3500,d10:5500,a10:5000,w5:24491,w7:28710,w10:38084,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Stokes Hall / Trinityville / Bath / Bowden / Golden Grove",p:38000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5500,w5:30555,w7:35834,w10:48802,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Manchionel / Hectors River",p:41000,d5:3600,a5:4000,d7:4500,a7:4000,d10:6500,a10:5500,w5:33856,w7:39687,w10:53841,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
 ];
 
 // ── DB ──
@@ -705,6 +711,11 @@ function gDB(){
         }
         return c;
       });
+      // Inject hipro if missing (new built-in contract)
+      if(!d.contracts.find(c=>c.id==='hipro')){
+        d.contracts.push({id:'hipro',name:'HI Pro Contract',description:'HI Pro contract haulage rates — load rates from HI_Pro_rate.xlsx via Bulk Upload',color:'#F59E0B',rates:buildHiProRates()});
+        dirty=true;
+      }
     }
     if(d.trips){
       d.trips=d.trips.map(t=>{
@@ -810,6 +821,13 @@ function buildWRates(src){
     r[`${i}_10T`]={clientRate:d.w10||0,driverPay:d.d10||0,asstPay:d.a10||0};
   });return r;
 }
+function buildHiProRates(src){
+  const r={};(src||DEST).forEach((d,i)=>{
+    r[`${i}_5T`]={clientRate:d.hp5||0,driverPay:d.hpd5||0,asstPay:d.hpa5||0};
+    r[`${i}_7T`]={clientRate:d.hp7||0,driverPay:d.hpd7||0,asstPay:d.hpa7||0};
+    r[`${i}_10T`]={clientRate:d.hp10||0,driverPay:d.hpd10||0,asstPay:d.hpa10||0};
+  });return r;
+}
 
 function initDB(){
   if(gDB()) return;
@@ -830,6 +848,7 @@ function initDB(){
     ],
     contracts:[
       {id:'tonnage',name:'Tonnage Contract',description:'Tonnage-based contract haulage rates',color:'#8B5CF6',rates:buildWRates()},
+      {id:'hipro',name:'HI Pro Contract',description:'HI Pro contract haulage rates — load rates from HI_Pro_rate.xlsx via Bulk Upload',color:'#F59E0B',rates:buildHiProRates()},
     ],
     trips:[]
   });
@@ -837,15 +856,22 @@ function initDB(){
 
 function getRate(t){
   const dests=gDEST();const d=dests[t.di];if(!d)return{price:0,dp:0,ap:0};
+  const ton=t.tonnage;
+  // ── Private Work: flat client rate, driver/asst payouts from DEST ──
   if(t.ctype==='private'){
-    const ton=t.tonnage;
-    return{price:d.p,dp:ton==='5T'?d.d5:ton==='7T'?d.d7:d.d10,ap:ton==='5T'?d.a5:ton==='7T'?d.a7:d.a10};
+    return{
+      price:d.p,
+      dp:ton==='5T'?d.d5:ton==='7T'?d.d7:d.d10,
+      ap:ton==='5T'?d.a5:ton==='7T'?d.a7:d.a10
+    };
   }
-  const db=gDB();const con=db.contracts.find(c=>c.id===t.ctype);
+  // ── All other contracts (tonnage, hipro, custom) stored in DB ──
+  const db=gDB();
+  const con=db.contracts.find(c=>c.id===t.ctype);
   if(!con)return{price:0,dp:0,ap:0};
-  const r=con.rates[`${t.di}_${t.tonnage}`];
+  const r=con.rates&&con.rates[`${t.di}_${ton}`];
   if(!r)return{price:0,dp:0,ap:0};
-  return{price:r.clientRate,dp:r.driverPay,ap:r.asstPay};
+  return{price:r.clientRate||0,dp:r.driverPay||0,ap:r.asstPay||0};
 }
 
 function jmd(n){return'J$'+Number(n).toLocaleString('en-JM');}
@@ -857,6 +883,8 @@ function badge(s){
 function ib(l,v){return`<div class="ib"><div class="ib-lbl">${l}</div><div class="ib-val">${v||'—'}</div></div>`;}
 function ctypeBadge(ctype,db){
   if(ctype==='private')return`<span class="badge bdg-private">Private</span>`;
+  if(ctype==='tonnage')return`<span class="badge" style="background:rgba(139,92,246,.2);color:#A78BFA">Tonnage</span>`;
+  if(ctype==='hipro')return`<span class="badge" style="background:rgba(245,158,11,.2);color:#FBBF24">HI Pro</span>`;
   const c=db.contracts.find(x=>x.id===ctype);
   return c?`<span class="badge" style="background:${c.color}22;color:${c.color}">${c.name}</span>`:`<span class="badge bdg-private">${ctype}</span>`;
 }
@@ -1122,6 +1150,7 @@ function openTripModal(tid){
     </div>`:''}
     <div style="display:flex;flex-direction:column;gap:9px;margin-top:14px">
       <button class="btn-sm btn-ghost" style="padding:11px" onclick="openEditTripModal('${t.id}')">✏️ Edit Trip Details</button>
+      <button class="btn-sm btn-ghost" style="padding:11px" onclick="dupTrip('${t.id}')">📋 Duplicate Trip</button>
       ${t.status==='Assigned'?`<button class="btn-sm btn-ghost" style="padding:12px" onclick="reassignVehicle('${t.id}')">🔄 Reassign Vehicle</button>`:''}
       ${nxt==='Completed'?`<div class="form-group" style="margin-top:4px"><label style="font-size:12px">Completion Note (optional)</label><input class="form-input" id="completion-note-input" placeholder="e.g. Delivered to warehouse B, slight delay due to traffic" value="${t.completionNote||''}"/></div>`:''}
       ${nxt?`<button class="btn-primary" style="margin-top:0" onclick="updateStatus('${t.id}','${nxt}')">Move to: ${nxt}</button>`:''}
@@ -1243,6 +1272,24 @@ function markPaid(tid){
   const db=gDB();const t=db.trips.find(x=>x.id===tid);if(t){t.pstatus='Paid';sDB(db);}
   closeModal('modal-trip');renderAdminTrips();
 }
+function dupTrip(tid){
+  const db=gDB();const t=db.trips.find(x=>x.id===tid);if(!t)return;
+  closeModal('modal-trip');
+  // Pre-fill add trip modal with duplicated values
+  const dests=gDEST();
+  document.getElementById('nt-dest').innerHTML=dests.map((d,i)=>`<option value="${i}" ${i===t.di?'selected':''}>${d.n.split('/')[0].trim()}</option>`).join('');
+  document.getElementById('nt-ctype').innerHTML=`<option value="private" ${t.ctype==='private'?'selected':''}>Private Work</option>`+db.contracts.map(c=>`<option value="${c.id}" ${t.ctype===c.id?'selected':''}>${c.name}</option>`).join('');
+  document.getElementById('nt-vehicle').innerHTML='<option value="">— Assign later —</option>'+(db.vehicles.length?db.vehicles.map(v=>`<option value="${v.id}">${v.plate} · ${v.model} (${v.tonnage})</option>`).join(''):'');
+  document.getElementById('nt-ton').value=t.tonnage;
+  document.getElementById('nt-client').value=t.clientName;
+  document.getElementById('nt-phone').value=t.clientPhone||'';
+  document.getElementById('nt-date').value=ds(1);
+  document.getElementById('nt-notes').value=t.notes||'';
+  document.getElementById('nt-cargo').value=t.cargoDetail||'';
+  document.getElementById('nt-recur').value='none';
+  document.getElementById('add-trip-alert').innerHTML=`<div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:9px 12px;font-size:12px;color:#60A5FA;margin-bottom:12px">📋 Duplicated from Ref ${t.id.toUpperCase()} — update the date and save.</div>`;
+  document.getElementById('modal-add-trip').classList.add('open');
+}
 
 // ── Add Trip
 function openAddTripModal(){
@@ -1306,15 +1353,36 @@ function uList(role,db){
   const list=db.users.filter(u=>u.role===role);
   const inviteBtn=role==='client'?`<div style="margin-bottom:12px"><button class="btn-sm btn-green" style="width:100%;padding:11px;font-size:13px" onclick="createClientInvite()">🔗 Generate Client Invite Link</button></div>`:'';
   if(!list.length)return inviteBtn+`<div class="empty-state"><div class="ei">👤</div><p>No ${role}s added yet</p></div>`;
-  return inviteBtn+list.map(u=>`<div class="list-item">
-    <div class="l-avatar" style="background:${cls[u.role]}22;color:${cls[u.role]}">${ini(u.name)}</div>
-    <div class="l-info"><div class="l-name">${u.name}</div><div class="l-sub">@${u.username} · ${u.phone||'—'}</div></div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button class="btn-sm btn-ghost" onclick="openEditUserModal('${u.id}')">Edit</button>
-      <button class="btn-sm btn-blue" style="color:#fff" onclick="openChangePass('${u.id}',true)">🔒 Set Password</button>
-      <button class="btn-sm btn-red" onclick="delUser('${u.id}')">Remove</button>
-    </div>
-  </div>`).join('');
+  // Build perf stats for workers
+  const now=new Date();const mStart=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
+  return inviteBtn+list.map(u=>{
+    let perfHtml='';
+    if(role==='driver'||role==='assistant'){
+      const isDr=role==='driver';
+      const mTrips=db.trips.filter(t=>t.date>=mStart&&t.status==='Completed'&&(isDr?t.driverId===u.id:t.assistantId===u.id));
+      const podCount=mTrips.filter(t=>t.pod).length;
+      const podRate=mTrips.length?Math.round((podCount/mTrips.length)*100):0;
+      const earned=mTrips.reduce((s,t)=>{const r=getRate(t);return s+(isDr?r.dp:r.ap);},0);
+      const outstanding=mTrips.filter(t=>!(isDr?t.driverPaid:t.asstPaid)).reduce((s,t)=>{const r=getRate(t);return s+(isDr?r.dp:r.ap);},0);
+      perfHtml=`<div style="background:var(--surface);border-radius:10px;padding:10px;margin:10px 0 4px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">
+        <div><div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--accent)">${mTrips.length}</div><div style="font-size:10px;color:var(--muted)">This Month</div></div>
+        <div><div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:16px;font-weight:800;color:${podRate>=80?'#10B981':'#F5A623'}">${podRate}%</div><div style="font-size:10px;color:var(--muted)">POD Rate</div></div>
+        <div><div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:16px;font-weight:800;color:${outstanding>0?'#F5A623':'#10B981'}">${jmd(outstanding)}</div><div style="font-size:10px;color:var(--muted)">Outstanding</div></div>
+      </div>`;
+    }
+    return`<div class="list-item" style="flex-direction:column;align-items:stretch">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="l-avatar" style="background:${cls[u.role]}22;color:${cls[u.role]}">${ini(u.name)}</div>
+        <div class="l-info"><div class="l-name">${u.name}</div><div class="l-sub">@${u.username} · ${u.phone||'—'}</div></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0">
+          <button class="btn-sm btn-ghost" onclick="openEditUserModal('${u.id}')">Edit</button>
+          <button class="btn-sm btn-blue" style="color:#fff" onclick="openChangePass('${u.id}',true)">🔒</button>
+          <button class="btn-sm btn-red" onclick="delUser('${u.id}')">✕</button>
+        </div>
+      </div>
+      ${perfHtml}
+    </div>`;
+  }).join('');
 }
 function openAddUserModal(){
   document.getElementById('add-user-alert').innerHTML='';
@@ -1673,12 +1741,20 @@ function shareWorkerPayroll(uid,wS,wE){
 let activeContractId=null;
 function renderAdminContracts(){
   const db=gDB();
+  const BUILT_IN=['tonnage','wisynco','hipro'];
   document.getElementById('admin-content').innerHTML=`
     <div class="sec-hdr"><div class="sec-ttl">Contracts</div><button class="btn-sm btn-accent" onclick="openAddContractModal()">+ New</button></div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Add company contracts with their own rates and driver/assistant payouts.</p>
+    <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#FCD34D;line-height:1.7">
+      📋 Three built-in rate types are active:<br>
+      <span style="color:var(--sub)">Private Work · Tonnage Contract · HI Pro Contract</span><br>
+      HI Pro rates must be loaded from <span style="font-family:monospace">HI_Pro_rate.xlsx</span> using the <strong>⬆ Bulk Upload</strong> button below.
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Each contract has its own pricing and driver/assistant payouts per destination.</p>
     ${db.contracts.length?db.contracts.map(c=>{
       const count=Object.keys(c.rates||{}).length;
-      return`<div class="card">
+      const hasRates=Object.values(c.rates||{}).some(r=>r.clientRate>0);
+      const needsUpload=c.id==='hipro'&&!hasRates;
+      return`<div class="card" style="${needsUpload?'border-color:rgba(245,158,11,.5)':''}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
           <div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
@@ -1687,8 +1763,9 @@ function renderAdminContracts(){
             </div>
             <div style="font-size:12px;color:var(--muted)">${c.description||'No description'}</div>
           </div>
-          ${(c.id!=='tonnage'&&c.id!=='wisynco')?`<button class="btn-sm btn-red" onclick="delContract('${c.id}')">Remove</button>`:''}
+          ${!BUILT_IN.includes(c.id)?`<button class="btn-sm btn-red" onclick="delContract('${c.id}')">Remove</button>`:'<span class="badge bdg-private" style="font-size:10px">Built-in</span>'}
         </div>
+        ${needsUpload?`<div style="background:rgba(245,158,11,.1);border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:12px;color:#FBBF24">⚠ No rates loaded yet — use <strong>⬆ Bulk Upload</strong> to import from HI_Pro_rate.xlsx</div>`:''}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
           ${ib('Rate Entries',count)}${ib('Coverage',count>0?`${Math.round(count/3)} destinations`:'None yet')}
         </div>
@@ -1757,6 +1834,7 @@ function saveNewContract(){
 }
 function delContract(cid){
   if(cid==='tonnage'||cid==='wisynco'){alert('The Tonnage Contract is built-in and cannot be removed.');return;}
+  if(cid==='hipro'){alert('The HI Pro Contract is built-in and cannot be removed.');return;}
   if(!confirm('Delete this contract and all its rates?'))return;
   const db=gDB();db.contracts=db.contracts.filter(c=>c.id!==cid);sDB(db);renderAdminContracts();
 }
