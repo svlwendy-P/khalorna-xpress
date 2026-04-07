@@ -82,6 +82,7 @@ html,body{height:100%;background:#060E1F;font-family:'DM Sans',sans-serif;color:
 .modal-overlay.open{display:flex;}
 .modal-sheet{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-width:430px;padding:20px 20px 44px;max-height:92vh;overflow-y:auto;animation:slideUp .28s ease;}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
 .modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;}
 .modal-title{font-family:'Barlow Semi Condensed',sans-serif;font-size:22px;font-weight:700;margin-bottom:20px;}
 .quote-box{background:linear-gradient(135deg,rgba(245,166,35,.12),rgba(255,107,53,.07));border:1px solid rgba(245,166,35,.25);border-radius:16px;padding:18px;margin-top:14px;}
@@ -169,10 +170,15 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
       <div class="role-chip" onclick="selectRole('assistant')" id="role-assistant"><span class="ri">👷</span><span class="rl">Assistant</span></div>
       <div class="role-chip" onclick="selectRole('client')" id="role-client"><span class="ri">📦</span><span class="rl">Client</span></div>
     </div>
-    <div class="form-group"><label>Username</label><input class="form-input" id="login-user" type="text" placeholder="Enter username"/></div>
-    <div class="form-group"><label>Password</label><input class="form-input" id="login-pass" type="password" placeholder="Enter password"/></div>
+    <div class="form-group"><label>Username</label><input class="form-input" id="login-user" type="text" placeholder="Enter username" autocapitalize="none" autocorrect="off"/></div>
+    <div class="form-group">
+      <label>Password</label>
+      <div style="position:relative">
+        <input class="form-input" id="login-pass" type="password" placeholder="Enter password" style="padding-right:48px"/>
+        <button type="button" onclick="togglePassVis('login-pass','eye-login')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);padding:4px" id="eye-login">👁</button>
+      </div>
+    </div>
     <button class="btn-primary" onclick="doLogin()">Sign In</button>
-
   </div>
 </div>
 
@@ -283,7 +289,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
     <div class="modal-handle"></div>
     <div class="modal-title">Add New User</div>
     <div id="add-user-alert"></div>
-    <div class="form-group"><label>Full Name</label><input class="form-input" id="nu-name" placeholder="e.g. John Davis"/></div>
+    <div class="form-group"><label>Full Name</label><input class="form-input" id="nu-name" placeholder="e.g. Devon Brown"/></div>
     <div class="form-group"><label>Role</label><select class="form-select" id="nu-role"><option value="driver">Driver</option><option value="assistant">Assistant</option><option value="client">Client</option></select></div>
     <div class="form-group"><label>Username</label><input class="form-input" id="nu-user" placeholder="lowercase, no spaces"/></div>
     <div class="form-group"><label>Password</label><input class="form-input" id="nu-pass" type="password" placeholder="Min 6 characters"/></div>
@@ -518,6 +524,59 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
   </div>
 </div>
 
+<!-- MODAL: Expense Budget Cap -->
+<div class="modal-overlay" id="modal-budget">
+  <div class="modal-sheet"><div class="modal-handle"></div>
+    <div class="modal-title">Set Monthly Budget</div>
+    <div id="budget-alert"></div>
+    <div class="form-group"><label>Category</label>
+      <select class="form-select" id="budget-cat">
+        <option>Fuel</option><option>Maintenance</option><option>Insurance</option>
+        <option>Tyres</option><option>Driver Advance</option><option>Tolls</option><option>Other</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Monthly Cap (J$)</label>
+      <input class="form-input" id="budget-amount" type="number" placeholder="e.g. 50000"/>
+    </div>
+    <button class="btn-primary" onclick="saveBudget()">Save Budget</button>
+    <button class="btn-secondary" style="width:100%;margin-top:10px" onclick="closeModal('modal-budget')">Cancel</button>
+  </div>
+</div>
+
+<!-- MODAL: Broadcast Message -->
+<div class="modal-overlay" id="modal-broadcast">
+  <div class="modal-sheet"><div class="modal-handle"></div>
+    <div class="modal-title">📣 Broadcast to Team</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Opens WhatsApp for each active team member with your message pre-filled.</p>
+    <div class="form-group"><label>Recipients</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="bc-drivers" checked/> Drivers</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="bc-asst" checked/> Assistants</label>
+      </div>
+    </div>
+    <div class="form-group"><label>Message</label>
+      <textarea style="width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:11px;padding:12px;color:var(--text);font-size:14px;min-height:100px;outline:none;resize:vertical" id="bc-msg" placeholder="e.g. Roads on the Portmore corridor are heavy today — allow extra time."></textarea>
+    </div>
+    <div id="bc-links" style="margin-bottom:10px"></div>
+    <button class="btn-primary" onclick="buildBroadcast()">Generate WhatsApp Links</button>
+    <button class="btn-secondary" style="width:100%;margin-top:10px" onclick="closeModal('modal-broadcast')">Cancel</button>
+  </div>
+</div>
+
+<!-- MODAL: Trip Rating Note -->
+<div class="modal-overlay" id="modal-rate">
+  <div class="modal-sheet"><div class="modal-handle"></div>
+    <div class="modal-title">Thanks for your rating!</div>
+    <input type="hidden" id="rate-tid"/>
+    <div style="font-size:32px;text-align:center;margin-bottom:12px" id="rate-stars-display">★★★★★</div>
+    <div class="form-group"><label>Add a note (optional)</label>
+      <input class="form-input" id="rate-note" placeholder="e.g. Driver was on time and professional"/>
+    </div>
+    <button class="btn-primary" onclick="saveRatingNote()">Submit</button>
+    <button class="btn-secondary" style="width:100%;margin-top:10px" onclick="closeModal('modal-rate');renderMyBookings()">Skip</button>
+  </div>
+</div>
+
 <!-- MODAL: Change Password -->
 <div class="modal-overlay" id="modal-change-pass">
   <div class="modal-sheet"><div class="modal-handle"></div>
@@ -525,9 +584,69 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
     <div id="change-pass-alert"></div>
     <input type="hidden" id="cp-uid"/>
     <input type="hidden" id="cp-admin-mode"/>
-    <div id="cp-current-wrap" class="form-group"><label>Current Password</label><input class="form-input" id="cp-current" type="password" placeholder="Enter current password"/></div>
-    <div class="form-group"><label>New Password</label><input class="form-input" id="cp-new" type="password" placeholder="Min 6 characters"/></div>
-    <div class="form-group"><label>Confirm New Password</label><input class="form-input" id="cp-confirm" type="password" placeholder="Re-enter new password"/></div>
+    <div id="cp-current-wrap" class="form-group"><label>Current Password</label>
+      <div style="position:relative">
+        <input class="form-input" id="cp-current" type="password" placeholder="Enter current password" style="padding-right:48px"/>
+        <button type="button" onclick="togglePassVis('cp-current','eye-cp-cur')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);padding:4px" id="eye-cp-cur">👁</button>
+      </div>
+    </div>
+    <div class="form-group"><label>New Password</label>
+      <div style="position:relative">
+        <input class="form-input" id="cp-new" type="password" placeholder="Min 6 characters" style="padding-right:48px"/>
+        <button type="button" onclick="togglePassVis('cp-new','eye-cp-new')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);padding:4px" id="eye-cp-new">👁</button>
+      </div>
+    </div>
+    <div class="form-group"><label>Confirm New Password</label>
+      <div style="position:relative">
+        <input class="form-input" id="cp-confirm" type="password" placeholder="Re-enter new password" style="padding-right:48px"/>
+        <button type="button" onclick="togglePassVis('cp-confirm','eye-cp-con')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);padding:4px" id="eye-cp-con">👁</button>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="saveChangePass()">Update Password</button>
+    <button class="btn-secondary" style="width:100%;margin-top:10px" onclick="closeModal('modal-change-pass')">Cancel</button>
+  </div>
+</div>
+
+<!-- MODAL: Set Weekly Earnings Goal -->
+<div class="modal-overlay" id="modal-goal">
+  <div class="modal-sheet"><div class="modal-handle"></div>
+    <div class="modal-title">Weekly Earnings Goal</div>
+    <div id="goal-alert"></div>
+    <input type="hidden" id="goal-conid"/>
+    <input type="hidden" id="goal-role"/>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Set a target to track your weekly progress. You can update it anytime.</p>
+    <div class="form-group"><label>Goal Amount (J$)</label>
+      <input class="form-input" id="goal-amount" type="number" placeholder="e.g. 25000" style="font-size:16px"/>
+    </div>
+    <button class="btn-primary" onclick="saveGoal()">Save Goal</button>
+    <button class="btn-secondary" style="width:100%;margin-top:10px" onclick="closeModal('modal-goal')">Cancel</button>
+  </div>
+</div>
+
+</div>
+  <div class="modal-sheet"><div class="modal-handle"></div>
+    <div class="modal-title">Change Password</div>
+    <div id="change-pass-alert"></div>
+    <input type="hidden" id="cp-uid"/>
+    <input type="hidden" id="cp-admin-mode"/>
+    <div id="cp-current-wrap" class="form-group"><label>Current Password</label>
+      <div style="position:relative">
+        <input class="form-input" id="cp-current" type="password" placeholder="Enter current password" style="padding-right:48px"/>
+        <button type="button" onclick="togglePassVis('cp-current','eye-cp-cur')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);padding:4px" id="eye-cp-cur">👁</button>
+      </div>
+    </div>
+    <div class="form-group"><label>New Password</label>
+      <div style="position:relative">
+        <input class="form-input" id="cp-new" type="password" placeholder="Min 6 characters" style="padding-right:48px"/>
+        <button type="button" onclick="togglePassVis('cp-new','eye-cp-new')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);padding:4px" id="eye-cp-new">👁</button>
+      </div>
+    </div>
+    <div class="form-group"><label>Confirm New Password</label>
+      <div style="position:relative">
+        <input class="form-input" id="cp-confirm" type="password" placeholder="Re-enter new password" style="padding-right:48px"/>
+        <button type="button" onclick="togglePassVis('cp-confirm','eye-cp-con')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);padding:4px" id="eye-cp-con">👁</button>
+      </div>
+    </div>
     <button class="btn-primary" onclick="saveChangePass()">Update Password</button>
     <button class="btn-secondary" style="width:100%;margin-top:10px" onclick="closeModal('modal-change-pass')">Cancel</button>
   </div>
@@ -593,6 +712,48 @@ function gDB(){
         return t;
       });
     }
+    // ── User migration: replace test accounts with real team ──
+    const realUsers=[
+      {id:'u1',name:'Admin User',username:'admin',password:'admin123',role:'admin',phone:'876-559-3028'},
+      {id:'u2',name:'Thioney Cole',username:'thioney',password:'Pass123',role:'driver',phone:'876-456-0983'},
+      {id:'u3',name:'Sheldon Powell',username:'sheldon',password:'Pass123',role:'driver',phone:'876-591-4964'},
+      {id:'u4',name:'Raymond Adlam',username:'raymond',password:'Pass123',role:'assistant',phone:'876-456-0596'},
+      {id:'u5',name:'Xpress Ltd',username:'xpress',password:'Pass123',role:'client',phone:'876-559-3028'},
+    ];
+    const testUsernames=['john','marcus','keisha','tony','sandra'];
+    const hasTestUsers=(d.users||[]).some(u=>testUsernames.includes(u.username));
+    if(hasTestUsers){
+      // Preserve any non-test users (real accounts already added by admin)
+      const kept=(d.users||[]).filter(u=>!testUsernames.includes(u.username));
+      // Merge real users: add only if username not already present
+      realUsers.forEach(ru=>{
+        if(!kept.find(u=>u.username===ru.username))kept.push(ru);
+      });
+      d.users=kept;
+      // Update vehicle crew assignments to real user IDs
+      if(d.vehicles){
+        const thioney=d.users.find(u=>u.username==='thioney');
+        const sheldon=d.users.find(u=>u.username==='sheldon');
+        const raymond=d.users.find(u=>u.username==='raymond');
+        d.vehicles=d.vehicles.map(v=>{
+          if(v.plate==='CP9078'||v.plate==='AA1234')
+            return{...v,driverId:thioney?thioney.id:v.driverId,assistantId:raymond?raymond.id:v.assistantId};
+          if(v.plate==='CP3535'||v.plate==='BB5678')
+            return{...v,driverId:sheldon?sheldon.id:v.driverId,assistantId:null};
+          return v;
+        });
+      }
+      // Remove test trips that reference the old test users
+      if(d.trips){
+        const realIds=new Set(d.users.map(u=>u.id));
+        d.trips=d.trips.filter(t=>
+          !t.driverId||realIds.has(t.driverId)||
+          !t.clientName||!['Sandra White','Devon Brown','Marie Joseph','Peter Green','Lisa Campbell','Roy Thompson','Grace Mitchell'].includes(t.clientName)
+        );
+      }
+      dirty=true;
+    }
+
     // ── Vehicle plate migration: AA1234 → CP9078, BB5678 → CP3535 ──
     if(d.vehicles){
       // Find old and new vehicle records by plate
@@ -657,29 +818,20 @@ function initDB(){
     invites:[],expenses:[],notifications:[],recurring:[],
     destinations:DEST.slice(),
     users:[
-      {id:'u1',name:'Admin User',username:'admin',password:'admin123',role:'admin',phone:'876-555-0001'},
-      {id:'u2',name:'John Davis',username:'john',password:'pass123',role:'driver',phone:'876-555-0100'},
-      {id:'u3',name:'Marcus Reid',username:'marcus',password:'pass123',role:'driver',phone:'876-555-0101'},
-      {id:'u4',name:'Keisha Brown',username:'keisha',password:'pass123',role:'assistant',phone:'876-555-0200'},
-      {id:'u5',name:'Tony Clarke',username:'tony',password:'pass123',role:'assistant',phone:'876-555-0201'},
-      {id:'u6',name:'Sandra White',username:'sandra',password:'pass123',role:'client',phone:'876-555-0300'},
+      {id:'u1',name:'Admin User',username:'admin',password:'admin123',role:'admin',phone:'876-559-3028'},
+      {id:'u2',name:'Thioney Cole',username:'thioney',password:'Pass123',role:'driver',phone:'876-456-0983'},
+      {id:'u3',name:'Sheldon Powell',username:'sheldon',password:'Pass123',role:'driver',phone:'876-591-4964'},
+      {id:'u4',name:'Raymond Adlam',username:'raymond',password:'Pass123',role:'assistant',phone:'876-456-0596'},
+      {id:'u5',name:'Xpress Ltd',username:'xpress',password:'Pass123',role:'client',phone:'876-559-3028'},
     ],
     vehicles:[
       {id:'v1',plate:'CP9078',model:'Isuzu NPR',tonnage:'5T',driverId:'u2',assistantId:'u4'},
-      {id:'v2',plate:'CP3535',model:'Mitsubishi Canter',tonnage:'7T',driverId:'u3',assistantId:'u5'},
+      {id:'v2',plate:'CP3535',model:'Mitsubishi Canter',tonnage:'7T',driverId:'u3',assistantId:null},
     ],
     contracts:[
       {id:'tonnage',name:'Tonnage Contract',description:'Tonnage-based contract haulage rates',color:'#8B5CF6',rates:buildWRates()},
     ],
-    trips:[
-      {id:'t1',clientName:'Sandra White',clientPhone:'876-555-0300',di:19,tonnage:'5T',ctype:'private',vehicleId:'v1',driverId:'u2',assistantId:'u4',status:'Completed',date:ds(-2),notes:'',pstatus:'Paid',driverPaid:true,asstPaid:true},
-      {id:'t2',clientName:'Devon Brown',clientPhone:'876-555-0400',di:23,tonnage:'7T',ctype:'tonnage',vehicleId:'v2',driverId:'u3',assistantId:'u5',status:'Completed',date:ds(-3),notes:'Fragile cargo',pstatus:'Unpaid',driverPaid:false,asstPaid:false},
-      {id:'t3',clientName:'Marie Joseph',clientPhone:'876-555-0500',di:7,tonnage:'5T',ctype:'private',vehicleId:'v1',driverId:'u2',assistantId:'u4',status:'In Progress',date:ds(0),notes:'Handle with care',pstatus:'Unpaid',driverPaid:false,asstPaid:false},
-      {id:'t4',clientName:'Peter Green',clientPhone:'876-555-0600',di:16,tonnage:'10T',ctype:'tonnage',vehicleId:'v2',driverId:'u3',assistantId:'u5',status:'Assigned',date:ds(1),notes:'',pstatus:'Unpaid',driverPaid:false,asstPaid:false},
-      {id:'t5',clientName:'Lisa Campbell',clientPhone:'876-555-0700',di:1,tonnage:'7T',ctype:'private',vehicleId:'v1',driverId:'u2',assistantId:'u4',status:'Completed',date:ds(-5),notes:'',pstatus:'Paid',driverPaid:true,asstPaid:true},
-      {id:'t6',clientName:'Roy Thompson',clientPhone:'876-555-0800',di:8,tonnage:'10T',ctype:'tonnage',vehicleId:'v2',driverId:'u3',assistantId:'u5',status:'Completed',date:ds(-4),notes:'',pstatus:'Paid',driverPaid:true,asstPaid:true},
-      {id:'t7',clientName:'Grace Mitchell',clientPhone:'876-555-0900',di:11,tonnage:'7T',ctype:'private',vehicleId:null,driverId:null,assistantId:null,status:'Booked',date:ds(2),notes:'Call before arrival',pstatus:'Unpaid',driverPaid:false,asstPaid:false},
-    ]
+    trips:[]
   });
 }
 
@@ -712,6 +864,14 @@ function ctypeBadge(ctype,db){
 // ── AUTH ──
 let CU=null;
 function selectRole(r){document.querySelectorAll('.role-chip').forEach(c=>c.classList.remove('selected'));document.getElementById('role-'+r).classList.add('selected');}
+function togglePassVis(inputId,btnId){
+  const inp=document.getElementById(inputId);
+  const btn=document.getElementById(btnId);
+  if(!inp)return;
+  const show=inp.type==='password';
+  inp.type=show?'text':'password';
+  if(btn)btn.textContent=show?'🙈':'👁';
+}
 function doLogin(){
   const u=document.getElementById('login-user').value.trim();
   const p=document.getElementById('login-pass').value.trim();
@@ -759,6 +919,7 @@ function adminTab(tab,el){
 let _dashFrom=ds(-30),_dashTo=ds(0);
 function renderAdminDash(){
   const db=gDB();
+  if(!db||!db.trips){document.getElementById('admin-content').innerHTML='<div class="empty-state"><div class="ei">⏳</div><p>Loading data…</p></div>';return;}
   const all=db.trips;
   const filt=all.filter(t=>t.date>=_dashFrom&&t.date<=_dashTo);
   const total=filt.length,done=filt.filter(t=>t.status==='Completed').length,booked=all.filter(t=>t.status==='Booked').length,assigned=filt.filter(t=>t.status==='Assigned').length;
@@ -773,9 +934,17 @@ function renderAdminDash(){
   const bell=document.getElementById('notif-badge');
   if(bell){if(unsent>0){bell.style.display='flex';bell.textContent=unsent;}else bell.style.display='none';}
   document.getElementById('admin-content').innerHTML=`
-    ${booked?`<div class="assign-banner" style="cursor:pointer" onclick="adminTab('trips',document.getElementById('nav-trips'))">
-      <div style="font-weight:700;font-size:14px">⚡ ${booked} booking${booked>1?'s':''} waiting for a vehicle</div>
-      <div style="font-size:12px;color:var(--sub);margin-top:3px">Tap to assign trucks now</div>
+    ${booked?`<div class="assign-banner" style="cursor:pointer" onclick="toggleDashPending(this)">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:700;font-size:14px">⚡ ${booked} booking${booked>1?'s':''} waiting for a vehicle</div>
+          <div style="font-size:12px;color:var(--sub);margin-top:3px">Tap to assign trucks now</div>
+        </div>
+        <span style="font-size:18px;transition:transform .2s" id="dash-pending-chevron">›</span>
+      </div>
+      <div id="dash-pending-list" style="display:none;margin-top:12px;border-top:1px solid rgba(251,191,36,.3);padding-top:12px">
+        ${all.filter(t=>t.status==='Booked').map(t=>{const dests2=gDEST();const d2=dests2[t.di];return`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(36,53,82,.5)"><div><div style="font-size:13px;font-weight:600">${t.clientName}</div><div style="font-size:11px;color:var(--sub)">${d2?d2.n.split('/')[0].trim():'—'} · ${t.date}</div></div><button class="btn-sm btn-accent" style="color:#0A1628;padding:6px 12px" onclick="event.stopPropagation();openTripModal('${t.id}')">Assign</button></div>`;}).join('')}
+      </div>
     </div>`:''}
     ${recurDue?`<div class="assign-banner" style="cursor:pointer;border-color:rgba(59,130,246,.4);background:linear-gradient(135deg,rgba(59,130,246,.12),rgba(59,130,246,.04))" onclick="adminTab('recurring',document.getElementById('nav-recurring'))">
       <div style="font-weight:700;font-size:14px;color:#60A5FA">🔁 ${recurDue} recurring trip${recurDue>1?'s':''} due soon</div>
@@ -786,7 +955,14 @@ function renderAdminDash(){
       <div style="font-size:12px;color:var(--sub);margin-top:3px">Open a trip to send via WhatsApp</div>
     </div>`:''}
     <div class="card" style="margin-bottom:12px;padding:12px">
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:8px">Date Filter</div>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:10px">Date Range</div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+        <button class="btn-sm btn-ghost" style="padding:6px 12px;font-size:12px" onclick="_dashFrom=ds(0);_dashTo=ds(0);renderAdminDash()">Today</button>
+        <button class="btn-sm btn-ghost" style="padding:6px 12px;font-size:12px" onclick="(function(){const w=weekRange(ds(-7));_dashFrom=w.s;_dashTo=w.e;renderAdminDash();})()">Last Week</button>
+        <button class="btn-sm btn-ghost" style="padding:6px 12px;font-size:12px" onclick="_dashFrom=ds(-6);_dashTo=ds(0);renderAdminDash()">7 Days</button>
+        <button class="btn-sm btn-ghost" style="padding:6px 12px;font-size:12px" onclick="_dashFrom=ds(-29);_dashTo=ds(0);renderAdminDash()">30 Days</button>
+        <button class="btn-sm btn-ghost" style="padding:6px 12px;font-size:12px" onclick="_dashFrom=ds(-89);_dashTo=ds(0);renderAdminDash()">90 Days</button>
+      </div>
       <div style="display:flex;gap:8px;align-items:center">
         <input type="date" class="form-input" value="${_dashFrom}" style="flex:1;padding:9px 12px;font-size:13px" onchange="_dashFrom=this.value;renderAdminDash()"/>
         <span style="color:var(--muted);font-size:12px">→</span>
@@ -817,9 +993,20 @@ function renderAdminDash(){
     </div>
     <div class="sec-hdr"><div class="sec-ttl">Recent Trips</div><button class="btn-sm btn-ghost" onclick="adminTab('trips',document.getElementById('nav-trips'))">View All</button></div>
     ${recent.map(t=>tripCard(t,db)).join('')||'<div class="empty-state"><div class="ei">📭</div><p>No trips in range</p></div>'}
+    <div style="margin-top:16px">
+      <button class="btn-sm btn-ghost" style="width:100%;padding:13px;font-size:14px;border-radius:12px;border:1.5px solid var(--border)" onclick="openBroadcastModal()">📣 Send Broadcast to Team</button>
+    </div>
   `;
 }
 
+function toggleDashPending(el){
+  const list=document.getElementById('dash-pending-list');
+  const chevron=document.getElementById('dash-pending-chevron');
+  if(!list)return;
+  const open=list.style.display==='none';
+  list.style.display=open?'block':'none';
+  if(chevron)chevron.style.transform=open?'rotate(90deg)':'';
+}
 function tripCard(t,db){
   const d=gDEST()[t.di];const r=getRate(t);const v=db.vehicles.find(x=>x.id===t.vehicleId);
   const sn=d?d.n.split('/')[0].trim():'Unknown';
@@ -915,7 +1102,11 @@ function openTripModal(tid){
       ${t.pod.photo?`<img src="${t.pod.photo}" style="width:100%;border-radius:8px;margin-bottom:8px;max-height:200px;object-fit:cover"/>`:''}
       <div style="font-size:12px;color:var(--sub)">${t.pod.note||''} · ${t.pod.time||''}</div>
     </div>`:''}
-    <div class="quote-box">
+    ${t.rating?`<div style="background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:12px;padding:12px;margin-bottom:14px">
+      <div style="font-size:10px;color:var(--accent);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Client Rating</div>
+      <div style="font-size:22px">${'★'.repeat(t.rating)}${'☆'.repeat(5-t.rating)}</div>
+      ${t.ratingNote?`<div style="font-size:12px;color:var(--sub);margin-top:4px">"${t.ratingNote}"</div>`:''}
+    </div>`:''}    <div class="quote-box">
       <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;font-weight:600">Financial Breakdown</div>
       <div class="q-row"><span>Client Invoice</span><span style="color:var(--text);font-weight:600">${jmd(r.price)}</span></div>
       <div class="q-row"><span>Driver Pay (${t.tonnage})</span><span>${jmd(r.dp)}</span></div>
@@ -932,8 +1123,9 @@ function openTripModal(tid){
     <div style="display:flex;flex-direction:column;gap:9px;margin-top:14px">
       <button class="btn-sm btn-ghost" style="padding:11px" onclick="openEditTripModal('${t.id}')">✏️ Edit Trip Details</button>
       ${t.status==='Assigned'?`<button class="btn-sm btn-ghost" style="padding:12px" onclick="reassignVehicle('${t.id}')">🔄 Reassign Vehicle</button>`:''}
+      ${nxt==='Completed'?`<div class="form-group" style="margin-top:4px"><label style="font-size:12px">Completion Note (optional)</label><input class="form-input" id="completion-note-input" placeholder="e.g. Delivered to warehouse B, slight delay due to traffic" value="${t.completionNote||''}"/></div>`:''}
       ${nxt?`<button class="btn-primary" style="margin-top:0" onclick="updateStatus('${t.id}','${nxt}')">Move to: ${nxt}</button>`:''}
-      ${t.pstatus!=='Paid'?`<button class="btn-sm btn-green" style="padding:12px;font-size:14px;border-radius:11px" onclick="markPaid('${t.id}')">✓ Mark Invoice as Paid</button>`:''}
+      ${t.completionNote?`<div style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);border-radius:10px;padding:10px;margin-top:0"><div style="font-size:10px;color:#818CF8;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">📋 Completion Note</div><div style="font-size:13px;color:var(--sub)">${t.completionNote}</div></div>`:''}      ${t.pstatus!=='Paid'?`<button class="btn-sm btn-green" style="padding:12px;font-size:14px;border-radius:11px" onclick="markPaid('${t.id}')">✓ Mark Invoice as Paid</button>`:''}
       ${t.status==='Completed'?`<button class="btn-sm btn-blue" style="padding:11px;border-radius:11px" onclick="dlInvoice('${t.id}')">📄 Download Invoice</button>`:''}
       ${!t.notified?.[t.status.toLowerCase().replace(' ','')]&&t.clientPhone?`<button class="btn-sm btn-ghost" style="padding:11px" onclick="sendNotification('${t.id}')">🔔 Notify Client</button>`:''}
       <button class="btn-secondary" style="width:100%" onclick="closeModal('modal-trip')">Close</button>
@@ -1031,9 +1223,12 @@ function showAssignNotify(tid){
 function updateStatus(tid,ns){
   const db=gDB();const t=db.trips.find(x=>x.id===tid);
   if(t){
+    // Prompt for completion note when marking Completed
+    if(ns==='Completed'){
+      const note=document.getElementById('completion-note-input');
+      if(note)t.completionNote=note.value.trim();
+    }
     t.status=ns;
-    // auto-log notification
-    const key=ns.toLowerCase().replace(' ','');
     if(!t.notified)t.notified={};
     if(!db.notifications)db.notifications=[];
     const msgs={Assigned:'Your truck has been assigned and your trip is confirmed.',
@@ -1060,6 +1255,14 @@ function openAddTripModal(){
   ['nt-client','nt-phone','nt-notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('modal-add-trip').classList.add('open');
 }
+// ── Phone Validator
+function isValidPhone(p){
+  const digits=p.replace(/[^0-9]/g,'');
+  return digits.length>=7&&digits.length<=15;
+}
+function phoneWarn(p){
+  return p&&!isValidPhone(p)?'<div style="font-size:11px;color:#F87171;margin-top:4px">⚠ Phone number looks incomplete — WhatsApp links may not work.</div>':'';
+}
 function saveNewTrip(){
   const db=gDB();
   const cn=document.getElementById('nt-client').value.trim();
@@ -1072,7 +1275,9 @@ function saveNewTrip(){
   const notes=document.getElementById('nt-notes').value.trim();
   const cargoDetail=document.getElementById('nt-cargo').value.trim();
   const recur=document.getElementById('nt-recur').value;
-  if(!cn||!date){document.getElementById('add-trip-alert').innerHTML='<div class="alert alert-err">Client name and date are required.</div>';return;}
+  const al=document.getElementById('add-trip-alert');
+  if(!cn||!date){al.innerHTML='<div class="alert alert-err">Client name and date are required.</div>';return;}
+  if(cp&&!isValidPhone(cp)){al.innerHTML='<div class="alert alert-err">Phone number looks invalid. Check the number before saving.</div>';return;}
   const v=vid?db.vehicles.find(x=>x.id===vid):null;
   const id='t'+(++db.nid);
   db.trips.push({id,clientName:cn,clientPhone:cp,di,tonnage:ton,ctype,vehicleId:vid||null,driverId:v?v.driverId:null,assistantId:v?v.assistantId:null,status:v?'Assigned':'Booked',date,notes,cargoDetail,pstatus:'Unpaid',driverPaid:false,asstPaid:false,pod:null,notified:{}});
@@ -1759,6 +1964,7 @@ function renderWorkerTrips(conId,role,sel){
         </div>
         ${t.notes?`<div style="font-size:12px;color:var(--muted);margin-top:7px;padding:7px 10px;background:var(--surface);border-radius:8px">📝 ${t.notes}</div>`:''}
         ${t.cargoDetail?`<div style="font-size:12px;color:var(--muted);margin-top:5px;padding:7px 10px;background:var(--surface);border-radius:8px">📦 ${t.cargoDetail}</div>`:''}
+        ${(t.status==='Assigned'||t.status==='In Progress')&&d2?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d2.n.split('/')[0].trim()+', Jamaica')}" target="_blank" style="display:block;text-align:center;background:rgba(59,130,246,.15);color:#60A5FA;border:1px solid rgba(59,130,246,.3);border-radius:9px;padding:9px;font-size:13px;font-weight:600;text-decoration:none;margin-top:8px">📍 Get Directions to ${d2.n.split('/')[0].trim()}</a>`:''}
         ${t.pod?`<div style="margin-top:8px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;padding:10px">
           <div style="font-size:11px;color:#34D399;font-weight:600;margin-bottom:4px">✓ POD Recorded</div>
           ${t.pod.photo?`<img src="${t.pod.photo}" style="width:100%;border-radius:6px;max-height:120px;object-fit:cover;margin-bottom:6px"/>`:''}
@@ -1783,7 +1989,10 @@ function renderWorkerTrips(conId,role,sel){
 function renderWorkerEarnings(conId,role){
   const db=gDB();const isDr=role==='driver';const dests=gDEST();
   const today=new Date();
-  // Build 4 rolling weeks: current + 3 prior
+  // Load goal from user record
+  const u=db.users.find(x=>x.id===CU.id);
+  const goal=u&&u.weeklyGoal?u.weeklyGoal:0;
+  // Build 4 rolling weeks
   const weeks=Array.from({length:4},(_,i)=>{
     const ref=new Date(today);ref.setDate(today.getDate()-(i*7));
     const w=weekRange(ref.toISOString().split('T')[0]);
@@ -1799,6 +2008,23 @@ function renderWorkerEarnings(conId,role){
   });
   const allEarned=weeks.reduce((s,w)=>s+w.earned,0);
   const allOutstanding=weeks.reduce((s,w)=>s+w.outstanding,0);
+  const thisWeek=weeks[0];
+  const pct=goal>0?Math.min(100,Math.round((thisWeek.earned/goal)*100)):0;
+  const goalBar=goal>0?`
+    <div style="margin-top:14px;background:var(--surface);border-radius:12px;padding:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--muted)">Weekly Goal Progress</span>
+        <span style="font-size:12px;font-weight:700;color:${pct>=100?'#10B981':'var(--accent)'}">${pct}%</span>
+      </div>
+      <div style="background:var(--border);border-radius:6px;height:8px;overflow:hidden">
+        <div style="height:100%;border-radius:6px;background:${pct>=100?'#10B981':'var(--accent)'};width:${pct}%;transition:width .5s ease"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px">
+        <span style="font-size:11px;color:var(--muted)">${jmd(thisWeek.earned)} earned</span>
+        <span style="font-size:11px;color:var(--muted)">Goal: ${jmd(goal)}</span>
+      </div>
+      ${pct>=100?'<div style="text-align:center;margin-top:6px;font-size:12px;color:#10B981;font-weight:600">🎯 Goal reached this week!</div>':''}
+    </div>`:'<div style="margin-top:12px;text-align:center"><button class="btn-sm btn-ghost" style="padding:8px 16px;font-size:12px" onclick="openGoalModal(\''+conId+'\',\''+role+'\')">🎯 Set a weekly earnings goal</button></div>';
   document.getElementById(conId).innerHTML=`
     <div class="earn-banner" style="margin-bottom:14px">
       <div style="font-size:11px;color:rgba(245,166,35,.7);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:4px">4-Week Total</div>
@@ -1807,6 +2033,7 @@ function renderWorkerEarnings(conId,role){
         <div><div style="font-size:18px;font-weight:700;color:#10B981">${jmd(allEarned-allOutstanding)}</div><div style="font-size:11px;color:var(--muted)">Paid Out</div></div>
         <div><div style="font-size:18px;font-weight:700;color:#F5A623">${jmd(allOutstanding)}</div><div style="font-size:11px;color:var(--muted)">Outstanding</div></div>
       </div>
+      ${goalBar}
     </div>
     ${weeks.map(w=>`
       <div class="card" style="margin-bottom:10px${w.isCurrent?';border-color:rgba(245,166,35,.35)':''}">
@@ -1846,6 +2073,25 @@ function renderWorkerEarnings(conId,role){
         </div>`:'' }
       </div>`).join('')}
   `;
+}
+function openGoalModal(conId,role){
+  const db=gDB();const u=db.users.find(x=>x.id===CU.id);
+  document.getElementById('goal-conid').value=conId;
+  document.getElementById('goal-role').value=role;
+  document.getElementById('goal-amount').value=u&&u.weeklyGoal?u.weeklyGoal:'';
+  document.getElementById('goal-alert').innerHTML='';
+  document.getElementById('modal-goal').classList.add('open');
+}
+function saveGoal(){
+  const al=document.getElementById('goal-alert');
+  const n=parseInt((document.getElementById('goal-amount').value||'').replace(/[^0-9]/g,''));
+  if(isNaN(n)||n<1){al.innerHTML='<div class="alert alert-err">Please enter a valid amount.</div>';return;}
+  const db=gDB();const u=db.users.find(x=>x.id===CU.id);
+  if(u){u.weeklyGoal=n;CU.weeklyGoal=n;sDB(db);}
+  closeModal('modal-goal');
+  const conId=document.getElementById('goal-conid').value;
+  const role=document.getElementById('goal-role').value;
+  renderWorkerEarnings(conId,role);
 }
 
 // ── CLIENT BOOKINGS SUMMARY ──
@@ -1896,6 +2142,16 @@ function renderMyBookings(){
           <div class="trip-meta-i">🔖 <span>${t.id.toUpperCase()}</span></div>
         </div>
         ${t.pod?`<div style="margin-top:6px;font-size:11px;color:#34D399;background:rgba(16,185,129,.08);border-radius:6px;padding:5px 8px">✓ Delivered · ${t.pod.time||''}</div>`:''}
+        ${t.status==='Completed'&&!t.rating?`<div style="margin-top:10px">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Rate this delivery:</div>
+          <div style="display:flex;gap:6px">
+            ${[1,2,3,4,5].map(n=>`<button onclick="rateTrip('${t.id}',${n})" style="font-size:22px;background:none;border:none;cursor:pointer;padding:0;line-height:1">☆</button>`).join('')}
+          </div>
+        </div>`:''}
+        ${t.rating?`<div style="margin-top:8px;display:flex;align-items:center;gap:6px">
+          <span style="font-size:18px">${'★'.repeat(t.rating)}${'☆'.repeat(5-t.rating)}</span>
+          ${t.ratingNote?`<span style="font-size:11px;color:var(--muted)">"${t.ratingNote}"</span>`:''}
+        </div>`:''}
         <div style="margin-top:8px;display:flex;gap:6px;align-items:center;justify-content:space-between">
           <span class="badge ${t.pstatus==='Paid'?'bdg-paid':'bdg-unpaid'}">${t.pstatus}</span>
           <span style="font-family:'Barlow Semi Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--accent)">${jmd(r.price)}</span>
@@ -1904,6 +2160,49 @@ function renderMyBookings(){
       </div>`;
     }).join(''):'<div class="empty-state"><div class="ei">📭</div><p>No bookings yet</p></div>'}
   `;
+}
+
+// ── BROADCAST ──
+function openBroadcastModal(){
+  document.getElementById('bc-msg').value='';
+  document.getElementById('bc-links').innerHTML='';
+  document.getElementById('modal-broadcast').classList.add('open');
+}
+function buildBroadcast(){
+  const msg=document.getElementById('bc-msg').value.trim();
+  if(!msg){document.getElementById('bc-links').innerHTML='<div class="alert alert-err">Please type a message first.</div>';return;}
+  const db=gDB();
+  const incDrivers=document.getElementById('bc-drivers').checked;
+  const incAsst=document.getElementById('bc-asst').checked;
+  const roles=[];
+  if(incDrivers)roles.push('driver');
+  if(incAsst)roles.push('assistant');
+  const workers=db.users.filter(u=>roles.includes(u.role)&&u.phone);
+  if(!workers.length){document.getElementById('bc-links').innerHTML='<div class="alert alert-err">No team members with phone numbers found.</div>';return;}
+  const fullMsg='*Khalorna Xpress — Team Update*\n\n'+msg+'\n\n— Admin';
+  const links=workers.map(w=>{
+    const phone=w.phone.replace(/[^0-9]/g,'');
+    return`<a href="https://wa.me/${phone}?text=${encodeURIComponent(fullMsg)}" target="_blank" style="display:block;background:#25D366;color:#fff;border-radius:11px;padding:13px;font-family:'Barlow Semi Condensed',sans-serif;font-size:16px;font-weight:700;text-align:center;text-decoration:none;margin-bottom:8px">📲 Send to ${w.name}</a>`;
+  }).join('');
+  document.getElementById('bc-links').innerHTML=`<div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">${workers.length} recipient${workers.length>1?'s':''} — tap each to send</div>`+links;
+}
+
+// ── TRIP RATING ──
+function rateTrip(tid,stars){
+  const db=gDB();const t=db.trips.find(x=>x.id===tid);if(!t)return;
+  t.rating=stars;sDB(db);
+  // Offer optional note
+  document.getElementById('rate-tid').value=tid;
+  document.getElementById('rate-stars-display').textContent='★'.repeat(stars)+'☆'.repeat(5-stars);
+  document.getElementById('rate-note').value='';
+  document.getElementById('modal-rate').classList.add('open');
+}
+function saveRatingNote(){
+  const tid=document.getElementById('rate-tid').value;
+  const note=document.getElementById('rate-note').value.trim();
+  const db=gDB();const t=db.trips.find(x=>x.id===tid);
+  if(t&&note){t.ratingNote=note;sDB(db);}
+  closeModal('modal-rate');renderMyBookings();
 }
 
 // ── VEHICLE AVAILABILITY CHECK ──
@@ -2093,23 +2392,31 @@ function submitBooking(){
   const date=document.getElementById('b-date').value;
   const notes=document.getElementById('b-notes').value.trim();
   if(!name||!phone||!date){document.getElementById('book-alert').innerHTML='<div class="alert alert-err">Name, phone and date required.</div>';return;}
+  if(!isValidPhone(phone)){document.getElementById('book-alert').innerHTML='<div class="alert alert-err">Phone number looks invalid — check the number before booking.</div>';return;}
   const id='t'+(++db.nid);
   db.trips.push({id,clientName:name,clientPhone:phone,di,tonnage:ton,ctype:'private',vehicleId:null,driverId:null,assistantId:null,status:'Booked',date,notes,cargoDetail:'',pstatus:'Unpaid',driverPaid:false,asstPaid:false,pod:null,notified:{}});
   sDB(db);
-  const d=dests[di];
+  const d=dests[di];const destName=d?d.n.split('/')[0].trim():'-';
+  const receiptMsg='*Khalorna Xpress Ltd — Booking Confirmation*\n\nHello '+name+', your booking has been received.\n\nRef: '+id.toUpperCase()+'\nDestination: '+destName+'\nDate: '+date+'\nTonnage: '+ton+(notes?'\nNotes: '+notes:'')+'\n\nWe will confirm your truck assignment shortly.\n876-559-3028 · @khalorna_xpress';
+  const cleanPhone=phone.replace(/[^0-9]/g,'');
+  const waUrl='https://wa.me/'+cleanPhone+'?text='+encodeURIComponent(receiptMsg);
   document.getElementById('client-content').innerHTML=`
-    <div style="text-align:center;padding:40px 16px">
-      <div style="font-size:60px;margin-bottom:16px">🎉</div>
-      <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:28px;font-weight:800;margin-bottom:8px">Booking Submitted!</div>
-      <div style="font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.6">Trip to <strong style="color:var(--text)">${d?d.n.split('/')[0].trim():'-'}</strong><br>on <strong style="color:var(--text)">${date}</strong></div>
-      <div class="quote-box" style="text-align:left">
-        <div class="q-row"><span>Booking Ref</span><span style="font-family:monospace;letter-spacing:1px">${id.toUpperCase()}</span></div>
-        <div class="q-row"><span>Status</span><span class="badge bdg-booked">Awaiting Truck Assignment</span></div>
-        <div class="q-row"><span>Tonnage</span><span>${ton}</span></div>
-        <div class="q-row tot"><span>Rate</span><span style="color:var(--accent)">${jmd(d?d.p:0)}</span></div>
+    <div style="padding:32px 4px 16px">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:56px;margin-bottom:10px">🎉</div>
+        <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:26px;font-weight:800;margin-bottom:4px">Booking Submitted!</div>
+        <div style="font-size:13px;color:var(--muted)">We'll confirm your truck shortly</div>
       </div>
-      <p style="font-size:12px;color:var(--muted);margin-top:16px">Our team at Khalorna Xpress Ltd will confirm your booking shortly.</p>
-      <button class="btn-primary" style="margin-top:20px" onclick="clientTab('mybookings',document.querySelectorAll('#screen-client .tab-btn')[2])">View My Bookings</button>
+      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:12px">Booking Receipt</div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--sub)">Ref</span><span style="font-family:monospace;font-size:13px;letter-spacing:1px;color:var(--accent)">${id.toUpperCase()}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--sub)">Destination</span><span style="font-size:13px;font-weight:600">${destName}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--sub)">Date</span><span style="font-size:13px;font-weight:600">${date}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--sub)">Tonnage</span><span style="font-size:13px;font-weight:600">${ton}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="font-size:13px;color:var(--sub)">Rate</span><span style="font-family:'Barlow Semi Condensed',sans-serif;font-size:16px;font-weight:800;color:var(--accent)">${jmd(d?d.p:0)}</span></div>
+      </div>
+      <a href="${waUrl}" target="_blank" style="display:block;text-align:center;background:#25D366;color:#fff;border-radius:13px;padding:14px;font-family:'Barlow Semi Condensed',sans-serif;font-size:17px;font-weight:700;text-decoration:none;margin-bottom:10px">📲 Send Receipt to My WhatsApp</a>
+      <button class="btn-sm btn-ghost" style="width:100%;padding:12px" onclick="clientTab('mybookings',document.querySelectorAll('#screen-client .tab-btn')[2])">View My Bookings</button>
     </div>
   `;
 }
@@ -2282,16 +2589,39 @@ function resendNotif(nid){
 // ── EXPENSES ──
 function renderAdminExpenses(){
   const db=gDB();const exps=db.expenses||[];
+  const budgets=db.expenseBudgets||{};
   const total=exps.reduce((s,e)=>s+e.amount,0);
   const byCat={};exps.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+e.amount;});
   const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  const allCats=['Fuel','Maintenance','Insurance','Tyres','Driver Advance','Tolls','Other'];
   document.getElementById('admin-content').innerHTML=`
     <div class="sec-hdr"><div style="display:flex;align-items:center;gap:10px"><button class="btn-sm btn-ghost" onclick="adminTab('dashboard',document.getElementById('nav-dashboard'))">← Home</button><div class="sec-ttl">Expenses</div></div><button class="btn-sm btn-accent" onclick="openAddExpenseModal()">+ Log Expense</button></div>
     <div class="card" style="margin-bottom:14px">
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:6px">Total Expenses</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600">Total Expenses</div>
+        <button class="btn-sm btn-ghost" style="padding:4px 10px;font-size:11px" onclick="openBudgetModal()">🎯 Set Budgets</button>
+      </div>
       <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:32px;font-weight:800;color:var(--red)">${jmd(total)}</div>
-      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px">
-        ${cats.map(([cat,amt])=>`<span style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#F87171;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600">${cat}: ${jmd(amt)}</span>`).join('')}
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+        ${cats.map(([cat,amt])=>{
+          const cap=budgets[cat]||0;
+          const pct=cap>0?Math.min(100,Math.round(amt/cap*100)):0;
+          const over=cap>0&&amt>cap;
+          return`<div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:12px;font-weight:600;color:${over?'#F87171':'var(--sub)'}">${cat}</span>
+              <span style="font-size:12px;color:${over?'#F87171':'var(--muted)'}">
+                ${jmd(amt)}${cap?` / ${jmd(cap)}`:''}
+                ${cap?`<button onclick="openBudgetModal('${cat}')" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;margin-left:4px">edit</button>`:''}
+              </span>
+            </div>
+            ${cap?`<div style="background:var(--border);border-radius:4px;height:6px;overflow:hidden">
+              <div style="height:100%;border-radius:4px;background:${over?'#EF4444':pct>80?'#F5A623':'#10B981'};width:${pct}%;transition:width .4s"></div>
+            </div>
+            ${over?`<div style="font-size:10px;color:#F87171;margin-top:3px">⚠ Over budget by ${jmd(amt-cap)}</div>`:''}`:
+            `<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#F87171;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block">${jmd(amt)}</div>`}
+          </div>`;
+        }).join('')}
       </div>
     </div>
     ${exps.length?[...exps].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>`
@@ -2308,6 +2638,22 @@ function renderAdminExpenses(){
       </div>`).join('')
     :'<div class="empty-state"><div class="ei">🧾</div><p>No expenses logged yet</p></div>'}
   `;
+}
+function openBudgetModal(cat){
+  const db=gDB();const budgets=db.expenseBudgets||{};
+  document.getElementById('budget-cat').value=cat||'Fuel';
+  document.getElementById('budget-amount').value=cat&&budgets[cat]?budgets[cat]:'';
+  document.getElementById('budget-alert').innerHTML='';
+  document.getElementById('modal-budget').classList.add('open');
+}
+function saveBudget(){
+  const cat=document.getElementById('budget-cat').value;
+  const amt=parseInt((document.getElementById('budget-amount').value||'').replace(/[^0-9]/g,''));
+  const al=document.getElementById('budget-alert');
+  if(isNaN(amt)||amt<1){al.innerHTML='<div class="alert alert-err">Enter a valid amount.</div>';return;}
+  const db=gDB();if(!db.expenseBudgets)db.expenseBudgets={};
+  db.expenseBudgets[cat]=amt;sDB(db);
+  closeModal('modal-budget');renderAdminExpenses();
 }
 function openAddExpenseModal(){
   const db=gDB();
@@ -2367,15 +2713,26 @@ function _ctypeName(ctype,db){
 }
 function generateRecurring(rid){
   const db=gDB();const r=db.recurring.find(x=>x.id===rid);if(!r)return;
+  // Check for vehicle conflicts on the target date
+  const conflicts=db.trips.filter(t=>t.date===r.nextDate&&t.status!=='Completed');
+  if(conflicts.length){
+    const names=conflicts.map(t=>t.clientName).join(', ');
+    if(!confirm(`⚠ ${conflicts.length} trip${conflicts.length>1?'s':''} already exist on ${r.nextDate} (${names}).\n\nGenerate this recurring trip anyway?`))return;
+  }
   const id='t'+(++db.nid);
   db.trips.push({id,clientName:r.clientName,clientPhone:r.clientPhone||'',di:r.di,tonnage:r.tonnage,ctype:r.ctype,vehicleId:null,driverId:null,assistantId:null,status:'Booked',date:r.nextDate,notes:r.notes||'',cargoDetail:r.cargoDetail||'',pstatus:'Unpaid',driverPaid:false,asstPaid:false,pod:null,notified:{}});
-  // advance next date
   const nd=new Date(r.nextDate+'T00:00:00');
   if(r.freq==='weekly')nd.setDate(nd.getDate()+7);
   else if(r.freq==='biweekly')nd.setDate(nd.getDate()+14);
   else if(r.freq==='monthly')nd.setMonth(nd.getMonth()+1);
   r.nextDate=nd.toISOString().split('T')[0];
   sDB(db);renderAdminRecurring();
+  // Show success toast
+  const toast=document.createElement('div');
+  toast.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#10B981;color:#fff;padding:12px 24px;border-radius:12px;font-weight:600;font-size:14px;z-index:9999;white-space:nowrap';
+  toast.textContent='✓ Trip booked for '+r.nextDate.split('-').reverse().join('/');
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(),2500);
 }
 function toggleRecurring(rid){
   const db=gDB();const r=db.recurring.find(x=>x.id===rid);if(r)r.active=!r.active;sDB(db);renderAdminRecurring();
@@ -2418,10 +2775,10 @@ function renderAdminReports(){
 }
 function exportCSV(){
   const db=gDB();const dests=gDEST();
-  const rows=[['ID','Date','Client','Phone','Destination','Tonnage','Contract','Status','Invoice','Driver Pay','Asst Pay','Net','Payment','Cargo','POD']];
+  const rows=[['ID','Date','Client','Phone','Destination','Tonnage','Contract','Status','Invoice','Driver Pay','Asst Pay','Net','Payment','Cargo','POD','Completion Note']];
   db.trips.forEach(t=>{
     const d=dests[t.di];const r=getRate(t);
-    rows.push([t.id,t.date,t.clientName,t.clientPhone||'',d?d.n.split('/')[0].trim():'',t.tonnage,_ctypeName(t.ctype,db),t.status,r.price,r.dp,r.ap,r.price-r.dp-r.ap,t.pstatus,t.cargoDetail||'',t.pod?'Yes':'No']);
+    rows.push([t.id,t.date,t.clientName,t.clientPhone||'',d?d.n.split('/')[0].trim():'',t.tonnage,_ctypeName(t.ctype,db),t.status,r.price,r.dp,r.ap,r.price-r.dp-r.ap,t.pstatus,t.cargoDetail||'',t.pod?'Yes':'No',t.completionNote||'']);
   });
   dlCSV(rows,'khalorna-trips.csv');
 }
@@ -2575,6 +2932,31 @@ function submitInvite(){
 // ── MODALS ──
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});});
+
+// ── OFFLINE TOAST ──
+function showOfflineToast(msg){
+  const existing=document.getElementById('offline-toast');if(existing)existing.remove();
+  const t=document.createElement('div');
+  t.id='offline-toast';
+  t.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#1E293B;border-bottom:2px solid #EF4444;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;color:#F1F5F9;animation:slideDown .3s ease';
+  t.innerHTML=`<span style="font-size:18px">📵</span><span style="flex:1">${msg}</span>`;
+  document.body.appendChild(t);
+}
+function hideOfflineToast(){
+  const t=document.getElementById('offline-toast');
+  if(t){t.style.animation='slideUp .3s ease';setTimeout(()=>t.remove(),280);}
+}
+window.addEventListener('offline',()=>showOfflineToast('You\'re offline — data saved locally. WhatsApp links will work when reconnected.'));
+window.addEventListener('online',()=>{
+  hideOfflineToast();
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99999;background:#065F46;border-bottom:2px solid #10B981;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;color:#F1F5F9;animation:slideDown .3s ease';
+  t.innerHTML='<span style="font-size:18px">✅</span><span>Back online — everything is connected.</span>';
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.animation='slideUp .3s ease';setTimeout(()=>t.remove(),280);},3000);
+});
+// Check on load
+if(!navigator.onLine)showOfflineToast('You\'re offline — using saved data. WhatsApp links will work when reconnected.');
 
 // ── INIT ──
 initDB();
