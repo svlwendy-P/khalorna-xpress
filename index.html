@@ -217,8 +217,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
   <div class="top-bar">
     <div><div class="top-bar-title" id="driver-name-bar">Driver</div><div class="top-bar-sub" id="driver-sub-bar">My Trips</div></div>
     <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:20px;cursor:pointer" title="Change Password" onclick="openChangePass(null,false)">🔒</span>
-      <div style="font-size:12px;color:var(--muted)">Driver</div>
+            <div style="font-size:12px;color:var(--muted)">Driver</div>
       <div class="avatar" style="background:var(--blue);color:#fff" id="driver-avatar" onclick="doLogout()"></div>
     </div>
   </div>
@@ -235,8 +234,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
   <div class="top-bar">
     <div><div class="top-bar-title" id="asst-name-bar">Assistant</div><div class="top-bar-sub" id="asst-sub-bar">My Trips</div></div>
     <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:20px;cursor:pointer" title="Change Password" onclick="openChangePass(null,false)">🔒</span>
-      <div style="font-size:12px;color:var(--muted)">Assistant</div>
+            <div style="font-size:12px;color:var(--muted)">Assistant</div>
       <div class="avatar" style="background:var(--purple);color:#fff" id="asst-avatar" onclick="doLogout()"></div>
     </div>
   </div>
@@ -253,8 +251,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
   <div class="top-bar">
     <div><div class="top-bar-title">Khalorna Xpress</div><div class="top-bar-sub" id="client-name-sub">Client Portal</div></div>
     <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:20px;cursor:pointer" title="Change Password" onclick="openChangePass(null,false)">🔒</span>
-      <div class="avatar" style="background:var(--green);color:#fff" id="client-avatar" onclick="doLogout()">CL</div>
+            <div class="avatar" style="background:var(--green);color:#fff" id="client-avatar" onclick="doLogout()">CL</div>
     </div>
   </div>
   <div class="page-content">
@@ -325,7 +322,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
     <div class="form-group"><label>Client Phone</label><input class="form-input" id="nt-phone" placeholder="876-xxx-xxxx"/></div>
     <div class="form-group"><label>Destination</label><select class="form-select" id="nt-dest"></select></div>
     <div class="form-group"><label>Tonnage</label><select class="form-select" id="nt-ton"><option value="5T">5 Ton</option><option value="7T">7 Ton</option><option value="10T">10 Ton</option></select></div>
-    <div class="form-group"><label>Contract / Rate Type</label><select class="form-select" id="nt-ctype"></select></div>
+    <div class="form-group"><label>Contract / Rate Type</label><select class="form-select" id="nt-ctype" onchange="switchDestById('nt-dest','nt-ctype')"></select></div>
     <div class="form-group"><label>Assign Vehicle (optional — assign later)</label><select class="form-select" id="nt-vehicle"></select></div>
     <div class="form-group"><label>Trip Date</label><input class="form-input" id="nt-date" type="date"/></div>
     <div class="form-group"><label>Notes</label><input class="form-input" id="nt-notes" placeholder="Optional notes"/></div>
@@ -465,7 +462,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
     <div class="form-group"><label>Client Phone</label><input class="form-input" id="et-phone"/></div>
     <div class="form-group"><label>Destination</label><select class="form-select" id="et-dest"></select></div>
     <div class="form-group"><label>Tonnage</label><select class="form-select" id="et-ton"><option value="5T">5 Ton</option><option value="7T">7 Ton</option><option value="10T">10 Ton</option></select></div>
-    <div class="form-group"><label>Rate Type</label><select class="form-select" id="et-ctype"></select></div>
+    <div class="form-group"><label>Rate Type</label><select class="form-select" id="et-ctype" onchange="switchDestById('et-dest','et-ctype')"></select></div>
     <div class="form-group"><label>Date</label><input class="form-input" id="et-date" type="date"/></div>
     <div class="form-group"><label>Notes</label><input class="form-input" id="et-notes"/></div>
     <div class="form-group"><label>Cargo Detail</label><input class="form-input" id="et-cargo"/></div>
@@ -654,48 +651,70 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
 
 </div>
 <script>
-// ── RATE STRUCTURE ──
-// p   = Private Work flat client rate
-// d5/a5, d7/a7, d10/a10 = Private Work driver/asst payouts per tonnage
-// w5/w7/w10  = Tonnage Contract client rates per tonnage
-// hp5/hp7/hp10 = HI Pro Contract client rates (loaded from HI_Pro_rate.xlsx via bulk upload)
-// hpd5/hpa5, hpd7/hpa7, hpd10/hpa10 = HI Pro driver/asst payouts per tonnage
+// ── DESTINATIONS ── p=private client rate, d5/a5/d7/a7/d10/a10=private driver/asst pay (flat),
+// w5/wd5/wa5 ... w10/wd10/wa10 = tonnage contract client rate + driver/asst pay per tonnage tier
 const DEST=[
-  {n:"Downtown",p:20000,d5:2000,a5:2000,d7:2500,a7:2500,d10:3500,a10:3500,w5:14261,w7:18057,w10:23543,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Kingston / Round Town / Half Way Tree / Liguanea / JacksHill",p:20000,d5:2000,a5:2000,d7:2500,a7:2500,d10:3500,a10:3500,w5:13905,w7:17363,w10:22562,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Spanish Town / Portmore / Ferry",p:20000,d5:1500,a5:1500,d7:3000,a7:2500,d10:4500,a10:4000,w5:10885,w7:14146,w10:17618,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Old Harbour / Old Harbour Bay / Stony Hill / Port Royal / Harbour View / Airport / Bogwalk / Linstead / Riversdale / Papine / Kitson Town",p:20000,d5:2500,a5:2000,d7:3000,a7:2500,d10:4000,a10:3500,w5:15120,w7:17590,w10:24804,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Maypen / Four Paths / Ewarton / New Longsville / Gordon Town / RedHills / SligoVille",p:25000,d5:2000,a5:2000,d7:3000,a7:3000,d10:4500,a10:4000,w5:17012,w7:19884,w10:27974,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Tollgate / Clarendon Park / Above Rocks / BrownsHall / Friendship Gap",p:28000,d5:2500,a5:2000,d7:3500,a7:3000,d10:5500,a10:4500,w5:22129,w7:25799,w10:35590,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Lionel Town / Mitchell Town / Rocky Point / Race Course / Milk River / Worthy Park / Lawrence Tavern / Golden Spring / Vere / Portland Cottage / Irish Town",p:26000,d5:2500,a5:2000,d7:3000,a7:3000,d10:5000,a10:4500,w5:20269,w7:23847,w10:32343,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Chapleton / Summerfield / Rock River / Alston / Aenon Town / Mocho / Croft Hill / Mavis Bank",p:29000,d5:3500,a5:3000,d7:4000,a7:3500,d10:5500,a10:5000,w5:23847,w7:27824,w10:38046,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Porus / Williamsfield / Royal Flat / Mandeville / Newport / Kemps Hill / Kellits",p:29000,d5:3500,a5:3000,d7:4500,a7:4000,d10:6500,a10:5500,w5:27246,w7:31710,w10:43208,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Wait-A-Bit / Albert Town",p:36000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5500,w5:30520,w7:34985,w10:46380,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Spaldings / Christiana / Coleyville / Troy / Frankfield / Thompson Town",p:33000,d5:3500,a5:3000,d7:4000,a7:4000,d10:6500,a10:5500,w5:27246,w7:31710,w10:43208,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Junction / Bull Savannah / Top Hill / Munroe / Watchwell / Mountain Side / Ballards Valley / Malvern / New Forest / Alligator Pond",p:40000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5500,w5:33029,w7:38480,w10:52641,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Maggoty / Siloah / Balaclava / Lacovia / Newton",p:40000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5500,w5:33029,w7:38480,w10:52641,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Santa Cruz / Gutters",p:37000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5500,w5:30555,w7:36006,w10:49204,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Black River / New Market / Springfield / Treasure Beach / Southfield",p:42000,d5:3500,a5:3000,d7:4500,a7:4000,d10:6500,a10:5500,w5:34679,w7:40462,w10:55205,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Sav-La-Mar / Grange Hill / Frome / Whithorn / Petersfield / Cornwall Mountain / Bethel Town / Whitehouse / Ginger Hill / Seaford Town",p:49000,d5:5500,a5:5000,d7:6500,a7:5500,d10:7500,a10:7000,w5:39636,w7:47895,w10:65602,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Lucea / Kingsvale / Maroon Town / Hopewell / Round Hill",p:52000,d5:5000,a5:4500,d7:7000,a7:6500,d10:8500,a10:8000,w5:43761,w7:51032,w10:69606,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Negril / Little London / Darliston / Delveland",p:53000,d5:5500,a5:5000,d7:7000,a7:6500,d10:8500,a10:8000,w5:44595,w7:52852,w10:72003,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Green Island / Orange Bay",p:56000,d5:6000,a5:5500,d7:7000,a7:6500,d10:8500,a10:8000,w5:47870,w7:56126,w10:75177,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Montego Bay / Wakefield",p:48000,d5:6000,a5:4500,d7:6000,a7:5500,d10:7000,a10:6000,w5:40428,w7:46967,w10:61005,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Cambridge / Lambs River / Anchovy",p:51000,d5:5000,a5:4500,d7:6000,a7:5500,d10:7500,a10:7000,w5:42914,w7:49921,w10:64325,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Falmouth / Clarks Town / Jackson Bay / Ulster Spring / Cave Valley / Alexandria",p:41000,d5:3500,a5:3000,d7:4500,a7:4000,d10:6000,a10:5500,w5:33029,w7:39476,w10:53926,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Claremont / Bamboo / Browns Town / Runaway Bay / James Hill / Priory / Boscobel",p:37000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5500,w5:30555,w7:35834,w10:48802,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"St. Anns Bay / Ocho Rios / Retreat / Gayle / Oracabessa / Tower Isle / Jacks River",p:35000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5500,w5:30555,w7:35834,w10:48802,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Discovery Bay / Braco / Duncans",p:39000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5000,w5:32239,w7:37809,w10:51490,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Guys Hill / Glengoffe / Polly Ground",p:25000,d5:3500,a5:3000,d7:4000,a7:3500,d10:5500,a10:5000,w5:19788,w7:22594,w10:29570,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Clonmel / Richmond / Highgate / Islington / Port Maria / Carron Hall",p:30000,d5:3500,a5:3000,d7:4000,a7:3500,d10:5500,a10:5000,w5:23514,w7:27882,w10:38115,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Annotto Bay / Windsor Castle / Buff Bay / Skibo",p:28000,d5:3500,a5:3000,d7:4000,a7:3500,d10:5500,a10:5000,w5:21473,w7:26090,w10:35519,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Hope Bay / St. Margarets Bay / Port Antonio / Fellowship / Dragon Bay",p:42000,d5:3500,a5:3000,d7:4500,a7:4000,d10:6500,a10:5500,w5:35268,w7:41364,w10:54076,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Boston / Long Bay",p:46000,d5:4000,a5:3500,d7:5000,a7:4500,d10:6500,a10:6500,w5:38574,w7:44902,w10:59173,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Easington / Seaforth / Morant Bay / Lyssons / Airy Castle",p:30000,d5:3500,a5:3000,d7:4000,a7:3500,d10:5500,a10:5000,w5:24491,w7:28710,w10:38084,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Stokes Hall / Trinityville / Bath / Bowden / Golden Grove",p:38000,d5:3500,a5:3000,d7:4000,a7:3500,d10:6500,a10:5500,w5:30555,w7:35834,w10:48802,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
-  {n:"Manchionel / Hectors River",p:41000,d5:3600,a5:4000,d7:4500,a7:4000,d10:6500,a10:5500,w5:33856,w7:39687,w10:53841,hp5:0,hpd5:0,hpa5:0,hp7:0,hpd7:0,hpa7:0,hp10:0,hpd10:0,hpa10:0},
+  {n:"Downtown",p:20000,d5:2500,a5:2500,d7:2500,a7:2500,d10:2500,a10:2500,w5:13582,wd5:2000,wa5:2000,w7:17197,wd7:2500,wa7:2500,w10:22422,wd10:3500,wa10:3500},
+  {n:"Kingston , Round Town, Half Way Tree ,Liguanea,JacksHill,",p:20000,d5:2500,a5:2500,d7:2500,a7:2500,d10:2500,a10:2500,w5:13243,wd5:2000,wa5:2000,w7:16536,wd7:2500,wa7:2500,w10:21488,wd10:3500,wa10:3500},
+  {n:"Spanish Town, Portmore, Ferry",p:20000,d5:3000,a5:2500,d7:3000,a7:2500,d10:3000,a10:2500,w5:10367,wd5:1500,wa5:1500,w7:13472,wd7:3000,wa7:2500,w10:16779,wd10:4500,wa10:4000},
+  {n:"Old Harbour, Old Harbour Bay, Stony Hill, Port Royal, Harbour View, Airport, Bogwalk, Linstead, Riversdale, Papine, Kitson Town",p:20000,d5:3000,a5:2500,d7:3000,a7:2500,d10:3000,a10:2500,w5:14400,wd5:2500,wa5:2000,w7:16752,wd7:3000,wa7:2500,w10:23623,wd10:4000,wa10:3500},
+  {n:"Maypen, Four Paths, Ewarton, New Longsville,  Gordon Town, RedHills, SligoVille",p:25000,d5:3000,a5:3000,d7:3000,a7:3000,d10:3000,a10:3000,w5:16202,wd5:2000,wa5:2000,w7:18937,wd7:3000,wa7:3000,w10:26642,wd10:4500,wa10:4000},
+  {n:"Tollgate, Clarendon Park, Above Rocks, BrownsHall, Friendship Gap",p:28000,d5:3500,a5:3000,d7:3500,a7:3000,d10:3500,a10:3000,w5:21075,wd5:2500,wa5:2000,w7:24570,wd7:3500,wa7:3000,w10:33895,wd10:5500,wa10:4500},
+  {n:"Lionel Town, Mitchell Town,  Rocky Point, Race Course, Milk River, Worthy Park, Lawrence Tavern, Golden Spring, Vere, Portland Cottage, Irish Town,",p:26000,d5:3000,a5:3000,d7:3000,a7:3000,d10:3000,a10:3000,w5:19304,wd5:2500,wa5:2500,w7:22711,wd7:3000,wa7:3000,w10:30803,wd10:4500,wa10:4000},
+  {n:"Chapleton, Summerfield, Rock River, Alston, Aenon Town, Mocho, Croft Hill, Mavis Bank,",p:29000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:22711,wd5:3500,wa5:3000,w7:26499,wd7:4000,wa7:3500,w10:36234,wd10:5500,wa10:5000},
+  {n:"Porus, Williamsfield, Royal Flat, Mandeville, Newport, Kemps Hill, Kellits",p:33000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:25949,wd5:3500,wa5:3000,w7:30200,wd7:4000,wa7:3500,w10:41150,wd10:5500,wa10:5000},
+  {n:"Wait-A-Bit, Albert Town",p:36000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:29067,wd5:3500,wa5:3000,w7:33319,wd7:4000,wa7:3500,w10:44171,wd10:5500,wa10:5000},
+  {n:"Spaldings, Christiana, Coleyville, Troy, Frankfield, Thompson Town",p:33000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:25949,wd5:3500,wa5:3000,w7:30200,wd7:4000,wa7:3500,w10:41150,wd10:5500,wa10:5000},
+  {n:"Junction, Bull Savannah, Top Hill, Munroe, Watchwell, Mountain Side, Ballards Valley, Malvern, New Forest, Alligator Pond",p:40000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:31456,wd5:3500,wa5:3000,w7:36648,wd7:4000,wa7:3500,w10:50134,wd10:5500,wa10:5000},
+  {n:"Maggoty, Siloah, Balaclava, Lacovia, Newton",p:40000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:31456,wd5:3500,wa5:3000,w7:36648,wd7:4000,wa7:3500,w10:50134,wd10:5500,wa10:5000},
+  {n:"Santa Cruz, Gutters",p:37000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:29100,wd5:3500,wa5:3000,w7:34291,wd7:4000,wa7:3500,w10:46861,wd10:5500,wa10:5000},
+  {n:"Black River, New Market, Springfield, Treasure Beach, Southfield",p:42000,d5:4500,a5:4000,d7:4500,a7:4000,d10:4500,a10:4000,w5:33028,wd5:3500,wa5:3000,w7:38535,wd7:4500,wa7:4000,w10:52576,wd10:6000,wa10:5500},
+  {n:"Sav-La-Mar, Grange Hill, Frome, Whithorn, Petersfield, Cornwall Mountain, Bethel Town, Whitehouse, Ginger Hill, Seaford Town",p:49000,d5:6000,a5:5000,d7:6000,a7:5000,d10:6000,a10:5000,w5:37749,wd5:5500,wa5:5000,w7:45614,wd7:6000,wa7:5000,w10:62478,wd10:7500,wa10:7000},
+  {n:"Lucea,  Kingsvale, Maroon Town, Hopewell, Round Hill",p:52000,d5:7000,a5:6500,d7:7000,a7:6500,d10:7000,a10:6500,w5:41677,wd5:5000,wa5:4500,w7:48602,wd7:7000,wa7:6500,w10:66291,wd10:8500,wa10:8000},
+  {n:"Negril, Little London, Darliston, Delveland",p:53000,d5:7000,a5:6500,d7:7000,a7:6500,d10:7000,a10:6500,w5:42471,wd5:5500,wa5:5000,w7:50335,wd7:7000,wa7:6500,w10:68574,wd10:8500,wa10:8000},
+  {n:"Green Island, Orange Bay",p:56000,d5:7000,a5:6500,d7:7000,a7:6500,d10:7000,a10:6500,w5:45590,wd5:6000,wa5:5500,w7:53453,wd7:7000,wa7:6500,w10:71597,wd10:8500,wa10:8000},
+  {n:"Montego Bay,  Wakefield",p:48000,d5:6000,a5:5500,d7:6000,a7:5500,d10:6000,a10:5500,w5:38503,wd5:5000,wa5:4500,w7:44730,wd7:6000,wa7:5500,w10:58671,wd10:7000,wa10:6000},
+  {n:"Cambridge, Lambs River, Anchovy",p:51000,d5:6000,a5:5500,d7:6000,a7:5500,d10:6000,a10:5500,w5:40870,wd5:5000,wa5:4500,w7:47544,wd7:6000,wa7:5500,w10:61262,wd10:7500,wa10:7000},
+  {n:"Falmouth, Clarks Town, Jackson Bay, Ulster Spring, Cave Valley, Alexandria",p:41000,d5:4500,a5:4000,d7:4500,a7:4000,d10:4500,a10:4000,w5:31456,wd5:3500,wa5:3000,w7:37596,wd7:4500,wa7:4000,w10:51358,wd10:6000,wa10:5500},
+  {n:"Claremont, Bamboo, Browns Town, Runaway Bay,  James Hill, Priory, Boscobel",p:37000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:29100,wd5:3500,wa5:3000,w7:34128,wd7:4000,wa7:3500,w10:46478,wd10:5500,wa10:5000},
+  {n:"St. Anns Bay, Ocho Rios, Retreat, Gayle, Oracabessa, Tower Isle, Jacks River",p:35000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:29100,wd5:3500,wa5:3000,w7:34128,wd7:4000,wa7:3500,w10:46478,wd10:5500,wa10:5000},
+  {n:"Discovery Bay, Braco, Duncans",p:39000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:30704,wd5:3500,wa5:3000,w7:36009,wd7:4000,wa7:3500,w10:49038,wd10:5500,wa10:5000},
+  {n:"Guys Hill, Glengoffe, Polly Ground",p:25000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:18846,wd5:3500,wa5:3000,w7:21518,wd7:4000,wa7:3500,w10:28162,wd10:5500,wa10:5000},
+  {n:"Clonmel, Richmond, Highgate, Islington, Port Maria, Carron Hall",p:30000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:22394,wd5:3500,wa5:3000,w7:26554,wd7:4000,wa7:3500,w10:36300,wd10:5500,wa10:5000},
+  {n:"Annotto Bay, Windsor Castle, Buff Bay, Skibo",p:28000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:20450,wd5:3500,wa5:3000,w7:24848,wd7:4000,wa7:3500,w10:33828,wd10:5500,wa10:5000},
+  {n:"Hope Bay, St.Margarets Bay, Port Antonio, Fellowship, Dragon Bay",p:42000,d5:4500,a5:4000,d7:4500,a7:4000,d10:4500,a10:4000,w5:33589,wd5:3500,wa5:3000,w7:39394,wd7:4500,wa7:4000,w10:51501,wd10:6000,wa10:5500},
+  {n:"Boston, Long Bay",p:46000,d5:4500,a5:4000,d7:4500,a7:4000,d10:4500,a10:4000,w5:36737,wd5:4000,wa5:3500,w7:42764,wd7:4500,wa7:4000,w10:56355,wd10:6000,wa10:5500},
+  {n:"Easington, Seaforth, Morant Bay, Lyssons,  Airy Castle, Bull Bay",p:30000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:23325,wd5:3500,wa5:3000,w7:27343,wd7:4000,wa7:3500,w10:36270,wd10:5500,wa10:5000},
+  {n:"Stokes Hall, Trinityville, Bath, Bowden, Golden Grove",p:38000,d5:4000,a5:3500,d7:4000,a7:3500,d10:4000,a10:3500,w5:29761,wd5:3500,wa5:3000,w7:34904,wd7:4000,wa7:3500,w10:46478,wd10:5500,wa10:5000},
+  {n:"Manchionel, Hectors River",p:41000,d5:4500,a5:4000,d7:4500,a7:4000,d10:4500,a10:4000,w5:32244,wd5:3500,wa5:3000,w7:37797,wd7:4500,wa7:4000,w10:51277,wd10:6000,wa10:5500}
 ];
 
+
+// ── HI PRO DESTINATIONS (parish-level, separate from DEST) ──
+const HIPRO_DEST=[
+  "Linstead",
+  "May pen",
+  "Kingston",
+  "Portmore",
+  "Spanish town",
+  "Kignston & St andrew",
+  "Old harbour",
+  "Clarendon",
+  "mandeville",
+  "christianna",
+  "Spaulding",
+  "St andrew Temple hall",
+  "St mary",
+  "St Elizabeth",
+  "St ann",
+  "St thomas",
+  "portland",
+  "Trelawny",
+  "Montego Bay",
+  "Westmoreland",
+  "Hanover",
+  "st james"
+];
 // ── DB ──
 function gDB(){
   const r=localStorage.getItem('kx_v6');
@@ -711,16 +730,15 @@ function gDB(){
         }
         return c;
       });
-      // Inject hipro if missing (new built-in contract)
-      if(!d.contracts.find(c=>c.id==='hipro')){
-        d.contracts.push({id:'hipro',name:'HI Pro Contract',description:'HI Pro contract haulage rates — load rates from HI_Pro_rate.xlsx via Bulk Upload',color:'#F59E0B',rates:buildHiProRates()});
-        dirty=true;
-      }
+      // Inject hipro_feed / hipro_chick if missing; rename legacy 'hipro' → hipro_feed
+      d.contracts=d.contracts.map(c=>c.id==='hipro'?{...c,id:'hipro_feed',name:'HI Pro — Feed',description:'HI Pro contract: Feed deliveries (5T & 7T)',color:'#F59E0B',rates:{"0_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"0_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"1_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"1_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"2_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"2_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"3_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"3_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"4_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"4_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"5_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"5_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"6_5T":{"clientRate":13364.28,"driverPay":2500,"asstPay":2500},"6_7T":{"clientRate":15364.28,"driverPay":3500,"asstPay":3500},"7_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"7_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"8_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"8_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"9_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"9_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"10_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"10_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"11_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"11_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"12_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"12_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"13_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"13_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"14_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"14_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"15_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"15_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"16_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"16_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"17_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"17_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000},"18_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"18_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000},"19_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"19_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000},"20_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"20_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000}}}:c);
+      if(!d.contracts.find(c=>c.id==='hipro_feed')){d.contracts.push({id:'hipro_feed',name:'HI Pro — Feed',description:'HI Pro contract: Feed deliveries (5T & 7T)',color:'#F59E0B',rates:{"0_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"0_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"1_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"1_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"2_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"2_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"3_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"3_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"4_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"4_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"5_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"5_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"6_5T":{"clientRate":13364.28,"driverPay":2500,"asstPay":2500},"6_7T":{"clientRate":15364.28,"driverPay":3500,"asstPay":3500},"7_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"7_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"8_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"8_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"9_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"9_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"10_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"10_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"11_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"11_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"12_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"12_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"13_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"13_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"14_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"14_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"15_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"15_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"16_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"16_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"17_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"17_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000},"18_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"18_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000},"19_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"19_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000},"20_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"20_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000}}});dirty=true;}
+      if(!d.contracts.find(c=>c.id==='hipro_chick')){d.contracts.push({id:'hipro_chick',name:'HI Pro — Baby Chick',description:'HI Pro contract: Baby Chick deliveries (5T & 7T)',color:'#EC4899',rates:{"0_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"0_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"1_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"1_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"2_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"2_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"3_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"3_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"4_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"4_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"7_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"7_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"8_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"8_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"9_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"9_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"10_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"10_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"12_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"12_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"13_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"13_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"14_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"14_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"15_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"15_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"16_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"16_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000},"17_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"17_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000},"21_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"21_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000},"19_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"19_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000},"20_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"20_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000}}});dirty=true;}
     }
     if(d.trips){
       d.trips=d.trips.map(t=>{
         if(t.ctype==='wisynco'){dirty=true;return{...t,ctype:'tonnage'};}
-        return t;
+        if(t.ctype==='hipro'){dirty=true;return{...t,ctype:'hipro_feed'};}
       });
     }
     // ── User migration: replace test accounts with real team ──
@@ -815,19 +833,15 @@ function ds(o=0){const d=new Date();d.setDate(d.getDate()+o);return d.toISOStrin
 function weekRange(sel){const d=new Date(sel+'T00:00:00'),dow=d.getDay(),mon=new Date(d);mon.setDate(d.getDate()-(dow===0?6:dow-1));const sun=new Date(mon);sun.setDate(mon.getDate()+6);const s=mon.toISOString().split('T')[0],e=sun.toISOString().split('T')[0];const lb=`${mon.toLocaleDateString('en-JM',{month:'short',day:'numeric'})} – ${sun.toLocaleDateString('en-JM',{month:'short',day:'numeric',year:'numeric'})}`;return{s,e,lb};}
 
 function buildWRates(src){
+  // Builds tonnage contract rate table from DEST fields w5/wd5/wa5 … w10/wd10/wa10
   const r={};(src||DEST).forEach((d,i)=>{
-    r[`${i}_5T`]={clientRate:d.w5||0,driverPay:d.d5||0,asstPay:d.a5||0};
-    r[`${i}_7T`]={clientRate:d.w7||0,driverPay:d.d7||0,asstPay:d.a7||0};
-    r[`${i}_10T`]={clientRate:d.w10||0,driverPay:d.d10||0,asstPay:d.a10||0};
+    r[`${i}_5T`] ={clientRate:d.w5||0, driverPay:d.wd5||0, asstPay:d.wa5||0};
+    r[`${i}_7T`] ={clientRate:d.w7||0, driverPay:d.wd7||0, asstPay:d.wa7||0};
+    r[`${i}_10T`]={clientRate:d.w10||0,driverPay:d.wd10||0,asstPay:d.wa10||0};
   });return r;
 }
-function buildHiProRates(src){
-  const r={};(src||DEST).forEach((d,i)=>{
-    r[`${i}_5T`]={clientRate:d.hp5||0,driverPay:d.hpd5||0,asstPay:d.hpa5||0};
-    r[`${i}_7T`]={clientRate:d.hp7||0,driverPay:d.hpd7||0,asstPay:d.hpa7||0};
-    r[`${i}_10T`]={clientRate:d.hp10||0,driverPay:d.hpd10||0,asstPay:d.hpa10||0};
-  });return r;
-}
+// HI Pro rates are seeded directly from Excel constants (not derived from DEST)
+function buildHiProRates(){return{};}
 
 function initDB(){
   if(gDB()) return;
@@ -847,26 +861,32 @@ function initDB(){
       {id:'v2',plate:'CP3535',model:'Mitsubishi Canter',tonnage:'7T',driverId:'u3',assistantId:null},
     ],
     contracts:[
-      {id:'tonnage',name:'Tonnage Contract',description:'Tonnage-based contract haulage rates',color:'#8B5CF6',rates:buildWRates()},
-      {id:'hipro',name:'HI Pro Contract',description:'HI Pro contract haulage rates — load rates from HI_Pro_rate.xlsx via Bulk Upload',color:'#F59E0B',rates:buildHiProRates()},
+      {id:'tonnage',name:'Tonnage Contract',description:'Tonnage-based haulage — 3 tonnage tiers',color:'#8B5CF6',rates:buildWRates()},
+      {id:'hipro_feed',name:'HI Pro — Feed',description:'HI Pro contract: Feed deliveries (5T & 7T)',color:'#F59E0B',rates:{"0_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"0_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"1_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"1_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"2_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"2_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"3_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"3_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"4_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"4_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"5_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"5_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"6_5T":{"clientRate":13364.28,"driverPay":2500,"asstPay":2500},"6_7T":{"clientRate":15364.28,"driverPay":3500,"asstPay":3500},"7_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"7_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"8_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"8_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"9_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"9_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"10_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"10_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"11_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"11_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"12_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"12_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"13_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"13_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"14_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"14_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"15_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"15_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"16_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"16_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"17_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"17_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000},"18_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"18_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000},"19_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"19_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000},"20_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"20_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000}}},
+      {id:'hipro_chick',name:'HI Pro — Baby Chick',description:'HI Pro contract: Baby Chick deliveries (5T & 7T)',color:'#EC4899',rates:{"0_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"0_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"1_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"1_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"2_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"2_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"3_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"3_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"4_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"4_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"7_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"7_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"8_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"8_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"9_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"9_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"10_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"10_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"12_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"12_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"13_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"13_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"14_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"14_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"15_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"15_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"16_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"16_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000},"17_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"17_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000},"21_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"21_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000},"19_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"19_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000},"20_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"20_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000}}},
     ],
     trips:[]
   });
 }
 
 function getRate(t){
-  const dests=gDEST();const d=dests[t.di];if(!d)return{price:0,dp:0,ap:0};
   const ton=t.tonnage;
-  // ── Private Work: flat client rate, driver/asst payouts from DEST ──
+  // ── Private Work: flat client rate + flat driver/asst payout from DEST ──
   if(t.ctype==='private'){
-    return{
-      price:d.p,
-      dp:ton==='5T'?d.d5:ton==='7T'?d.d7:d.d10,
-      ap:ton==='5T'?d.a5:ton==='7T'?d.a7:d.a10
-    };
+    const dests=gDEST();const d=dests[t.di];if(!d)return{price:0,dp:0,ap:0};
+    return{price:d.p,dp:ton==='5T'?d.d5:ton==='7T'?d.d7:d.d10,ap:ton==='5T'?d.a5:ton==='7T'?d.a7:d.a10};
   }
-  // ── All other contracts (tonnage, hipro, custom) stored in DB ──
   const db=gDB();
+  // ── HI Pro contracts: use hdi (hipro parish index) for rate lookup ──
+  if(t.ctype==='hipro_feed'||t.ctype==='hipro_chick'){
+    const con=db.contracts.find(c=>c.id===t.ctype);
+    if(!con)return{price:0,dp:0,ap:0};
+    const hdi=t.hdi!=null?t.hdi:t.di;
+    const r=con.rates&&con.rates[`${hdi}_${ton}`];
+    if(!r)return{price:0,dp:0,ap:0};
+    return{price:r.clientRate||0,dp:r.driverPay||0,ap:r.asstPay||0};
+  }
+  // ── Tonnage + all other contracts: use di ──
   const con=db.contracts.find(c=>c.id===t.ctype);
   if(!con)return{price:0,dp:0,ap:0};
   const r=con.rates&&con.rates[`${t.di}_${ton}`];
@@ -884,8 +904,9 @@ function ib(l,v){return`<div class="ib"><div class="ib-lbl">${l}</div><div class
 function ctypeBadge(ctype,db){
   if(ctype==='private')return`<span class="badge bdg-private">Private</span>`;
   if(ctype==='tonnage')return`<span class="badge" style="background:rgba(139,92,246,.2);color:#A78BFA">Tonnage</span>`;
-  if(ctype==='hipro')return`<span class="badge" style="background:rgba(245,158,11,.2);color:#FBBF24">HI Pro</span>`;
-  const c=db.contracts.find(x=>x.id===ctype);
+  if(ctype==='hipro_feed')return`<span class="badge" style="background:rgba(245,158,11,.2);color:#FBBF24">HI Pro Feed</span>`;
+  if(ctype==='hipro_chick')return`<span class="badge" style="background:rgba(236,72,153,.2);color:#F472B6">HI Pro Chick</span>`;
+  const c=(db.contracts||[]).find(x=>x.id===ctype);
   return c?`<span class="badge" style="background:${c.color}22;color:${c.color}">${c.name}</span>`:`<span class="badge bdg-private">${ctype}</span>`;
 }
 
@@ -971,7 +992,7 @@ function renderAdminDash(){
         <span style="font-size:18px;transition:transform .2s" id="dash-pending-chevron">›</span>
       </div>
       <div id="dash-pending-list" style="display:none;margin-top:12px;border-top:1px solid rgba(251,191,36,.3);padding-top:12px">
-        ${all.filter(t=>t.status==='Booked').map(t=>{const dests2=gDEST();const d2=dests2[t.di];return`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(36,53,82,.5)"><div><div style="font-size:13px;font-weight:600">${t.clientName}</div><div style="font-size:11px;color:var(--sub)">${d2?d2.n.split('/')[0].trim():'—'} · ${t.date}</div></div><button class="btn-sm btn-accent" style="color:#0A1628;padding:6px 12px" onclick="event.stopPropagation();openTripModal('${t.id}')">Assign</button></div>`;}).join('')}
+        ${all.filter(t=>t.status==='Booked').map(t=>{const dests2=gDEST();const dn2=tripDestName(t);return`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(36,53,82,.5)"><div><div style="font-size:13px;font-weight:600">${t.clientName}</div><div style="font-size:11px;color:var(--sub)">${dn2} · ${t.date}</div></div><button class="btn-sm btn-accent" style="color:#0A1628;padding:6px 12px" onclick="event.stopPropagation();openTripModal('${t.id}')">Assign</button></div>`;}).join('')}
       </div>
     </div>`:''}
     ${recurDue?`<div class="assign-banner" style="cursor:pointer;border-color:rgba(59,130,246,.4);background:linear-gradient(135deg,rgba(59,130,246,.12),rgba(59,130,246,.04))" onclick="adminTab('recurring',document.getElementById('nav-recurring'))">
@@ -1035,9 +1056,17 @@ function toggleDashPending(el){
   list.style.display=open?'block':'none';
   if(chevron)chevron.style.transform=open?'rotate(90deg)':'';
 }
+// ── Destination name resolver (handles both DEST and HIPRO_DEST)
+function tripDestName(t){
+  if(isHipro(t.ctype)){
+    const hdi=t.hdi!=null?t.hdi:t.di;
+    return HIPRO_DEST[hdi]||'—';
+  }
+  const d=gDEST()[t.di];
+  return d?d.n.split('/')[0].trim():'Unknown';
+}
 function tripCard(t,db){
-  const d=gDEST()[t.di];const r=getRate(t);const v=db.vehicles.find(x=>x.id===t.vehicleId);
-  const sn=d?d.n.split('/')[0].trim():'Unknown';
+  const sn=tripDestName(t);const r=getRate(t);const v=db.vehicles.find(x=>x.id===t.vehicleId);
   return`<div class="trip-card" onclick="openTripModal('${t.id}')">
     <div class="trip-hdr"><div class="trip-dest">${sn}</div>${badge(t.status)}</div>
     <div class="trip-meta">
@@ -1085,10 +1114,10 @@ function applyTF(){
   let list=_tripStatus==='All'?db.trips:db.trips.filter(t=>t.status===_tripStatus);
   if(_tripWeek){const w=weekRange(_tripWeek);list=list.filter(t=>t.date>=w.s&&t.date<=w.e);}
   if(q){list=list.filter(t=>{
-    const d=dests[t.di];
+    const dn=tripDestName(t);
     return t.clientName.toLowerCase().includes(q)||
       t.id.toLowerCase().includes(q)||
-      (d&&d.n.toLowerCase().includes(q))||
+      dn.toLowerCase().includes(q)||
       (t.clientPhone&&t.clientPhone.includes(q));
   });}
   document.getElementById('trips-list').innerHTML=tripsList(list,db);
@@ -1102,12 +1131,12 @@ function tripsList(trips,db){
 let activeTripId=null;
 function openTripModal(tid){
   activeTripId=tid;
-  const db=gDB();const dests=gDEST();const t=db.trips.find(x=>x.id===tid);if(!t)return;
-  const d=dests[t.di];const r=getRate(t);
+  const db=gDB();const t=db.trips.find(x=>x.id===tid);if(!t)return;
+  const r=getRate(t);
   const v=db.vehicles.find(x=>x.id===t.vehicleId);
   const dr=db.users.find(x=>x.id===t.driverId);
   const as=db.users.find(x=>x.id===t.assistantId);
-  const sn=d?d.n.split('/')[0].trim():'Trip';
+  const sn=tripDestName(t);
   const nxt={'In Progress':'Completed'}[t.status]||null;
   const isBooked=t.status==='Booked';
 
@@ -1208,11 +1237,11 @@ function doAssignVehicle(){
   if(t&&v)setTimeout(()=>showAssignNotify(activeTripId),200);
 }
 function showAssignNotify(tid){
-  const db=gDB();const dests=gDEST();const t=db.trips.find(x=>x.id===tid);if(!t)return;
+  const db=gDB();const t=db.trips.find(x=>x.id===tid);if(!t)return;
   const dr=db.users.find(u=>u.id===t.driverId);
   const as=db.users.find(u=>u.id===t.assistantId);
   const v=db.vehicles.find(x=>x.id===t.vehicleId);
-  const dest=dests[t.di]?dests[t.di].n.split('/')[0].trim():'destination';
+  const dest=tripDestName(t);
   const lines=[
     '*Khalorna Xpress \u2014 Trip Assignment*','',
     'You have been assigned a trip.','',
@@ -1275,10 +1304,10 @@ function markPaid(tid){
 function dupTrip(tid){
   const db=gDB();const t=db.trips.find(x=>x.id===tid);if(!t)return;
   closeModal('modal-trip');
-  // Pre-fill add trip modal with duplicated values
-  const dests=gDEST();
-  document.getElementById('nt-dest').innerHTML=dests.map((d,i)=>`<option value="${i}" ${i===t.di?'selected':''}>${d.n.split('/')[0].trim()}</option>`).join('');
+  const hipro=isHipro(t.ctype);
+  const selIdx=hipro?(t.hdi!=null?t.hdi:0):t.di;
   document.getElementById('nt-ctype').innerHTML=`<option value="private" ${t.ctype==='private'?'selected':''}>Private Work</option>`+db.contracts.map(c=>`<option value="${c.id}" ${t.ctype===c.id?'selected':''}>${c.name}</option>`).join('');
+  document.getElementById('nt-dest').innerHTML=destOpts(t.ctype,selIdx);
   document.getElementById('nt-vehicle').innerHTML='<option value="">— Assign later —</option>'+(db.vehicles.length?db.vehicles.map(v=>`<option value="${v.id}">${v.plate} · ${v.model} (${v.tonnage})</option>`).join(''):'');
   document.getElementById('nt-ton').value=t.tonnage;
   document.getElementById('nt-client').value=t.clientName;
@@ -1292,10 +1321,21 @@ function dupTrip(tid){
 }
 
 // ── Add Trip
+// ── Destination options helper ──
+function isHipro(ctype){return ctype==='hipro_feed'||ctype==='hipro_chick';}
+function destOpts(ctype,selIdx){
+  const dests=isHipro(ctype)?HIPRO_DEST:gDEST().map(d=>d.n);
+  return dests.map((n,i)=>`<option value="${i}" ${i===selIdx?'selected':''}>${(isHipro(ctype)?n:n).split('/')[0].trim()}</option>`).join('');
+}
+function switchDestById(destSelId,ctypeSelId){
+  const ctype=document.getElementById(ctypeSelId).value;
+  document.getElementById(destSelId).innerHTML=destOpts(ctype,0);
+}
 function openAddTripModal(){
-  const db=gDB();const dests=gDEST();
-  document.getElementById('nt-dest').innerHTML=dests.map((d,i)=>`<option value="${i}">${d.n.split('/')[0].trim()}</option>`).join('');
-  document.getElementById('nt-ctype').innerHTML=`<option value="private">Private Work</option>`+db.contracts.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  const db=gDB();
+  const ctypeOpts=`<option value="private">Private Work</option>`+db.contracts.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('nt-ctype').innerHTML=ctypeOpts;
+  document.getElementById('nt-dest').innerHTML=destOpts('private',0);
   document.getElementById('nt-vehicle').innerHTML='<option value="">— Assign later —</option>'+(db.vehicles.length?db.vehicles.map(v=>`<option value="${v.id}">${v.plate} · ${v.model} (${v.tonnage})</option>`).join(''):'');
   document.getElementById('nt-date').value=ds(0);
   document.getElementById('add-trip-alert').innerHTML='';
@@ -1314,7 +1354,7 @@ function saveNewTrip(){
   const db=gDB();
   const cn=document.getElementById('nt-client').value.trim();
   const cp=document.getElementById('nt-phone').value.trim();
-  const di=parseInt(document.getElementById('nt-dest').value);
+  const rawIdx=parseInt(document.getElementById('nt-dest').value);
   const ton=document.getElementById('nt-ton').value;
   const ctype=document.getElementById('nt-ctype').value;
   const vid=document.getElementById('nt-vehicle').value;
@@ -1325,10 +1365,15 @@ function saveNewTrip(){
   const al=document.getElementById('add-trip-alert');
   if(!cn||!date){al.innerHTML='<div class="alert alert-err">Client name and date are required.</div>';return;}
   if(cp&&!isValidPhone(cp)){al.innerHTML='<div class="alert alert-err">Phone number looks invalid. Check the number before saving.</div>';return;}
+  const hipro=isHipro(ctype);
+  const di=hipro?0:rawIdx;  // di=0 for hipro (irrelevant); actual index stored in hdi
+  const hdi=hipro?rawIdx:undefined;
   const v=vid?db.vehicles.find(x=>x.id===vid):null;
   const id='t'+(++db.nid);
-  db.trips.push({id,clientName:cn,clientPhone:cp,di,tonnage:ton,ctype,vehicleId:vid||null,driverId:v?v.driverId:null,assistantId:v?v.assistantId:null,status:v?'Assigned':'Booked',date,notes,cargoDetail,pstatus:'Unpaid',driverPaid:false,asstPaid:false,pod:null,notified:{}});
-  if(recur!=='none'){if(!db.recurring)db.recurring=[];db.recurring.push({id:'r'+(++db.nid),clientName:cn,clientPhone:cp,di,tonnage:ton,ctype,notes,cargoDetail,freq:recur,nextDate:date,active:true});}
+  const tripObj={id,clientName:cn,clientPhone:cp,di,tonnage:ton,ctype,vehicleId:vid||null,driverId:v?v.driverId:null,assistantId:v?v.assistantId:null,status:v?'Assigned':'Booked',date,notes,cargoDetail,pstatus:'Unpaid',driverPaid:false,asstPaid:false,pod:null,notified:{}};
+  if(hipro)tripObj.hdi=hdi;
+  db.trips.push(tripObj);
+  if(recur!=='none'){if(!db.recurring)db.recurring=[];db.recurring.push({id:'r'+(++db.nid),clientName:cn,clientPhone:cp,di,hdi,tonnage:ton,ctype,notes,cargoDetail,freq:recur,nextDate:date,active:true});}
   sDB(db);closeModal('modal-add-trip');renderAdminTrips();
 }
 
@@ -1507,7 +1552,9 @@ function openEditTripModal(tid){
   document.getElementById('et-id').value=tid;
   document.getElementById('et-client').value=t.clientName;
   document.getElementById('et-phone').value=t.clientPhone||'';
-  document.getElementById('et-dest').innerHTML=dests.map((d,i)=>`<option value="${i}" ${i===t.di?'selected':''}>${d.n.split('/')[0].trim()}</option>`).join('');
+  const hipro=isHipro(t.ctype);
+  const selIdx=hipro?(t.hdi!=null?t.hdi:0):t.di;
+  document.getElementById('et-dest').innerHTML=destOpts(t.ctype,selIdx);
   document.getElementById('et-ton').value=t.tonnage;
   document.getElementById('et-ctype').innerHTML=`<option value="private" ${t.ctype==='private'?'selected':''}>Private Work</option>`+db.contracts.map(c=>`<option value="${c.id}" ${t.ctype===c.id?'selected':''}>${c.name}</option>`).join('');
   document.getElementById('et-date').value=t.date;
@@ -1523,11 +1570,15 @@ function saveEditTrip(){
   const cn=document.getElementById('et-client').value.trim();
   const date=document.getElementById('et-date').value;
   if(!cn||!date){al.innerHTML='<div class="alert alert-err">Client name and date required.</div>';return;}
+  const rawIdx=parseInt(document.getElementById('et-dest').value);
+  const ctype=document.getElementById('et-ctype').value;
+  const hipro=isHipro(ctype);
   t.clientName=cn;t.clientPhone=document.getElementById('et-phone').value.trim();
-  t.di=parseInt(document.getElementById('et-dest').value);
+  t.di=hipro?0:rawIdx;
+  if(hipro)t.hdi=rawIdx; else delete t.hdi;
   t.tonnage=document.getElementById('et-ton').value;
-  t.ctype=document.getElementById('et-ctype').value;
-  t.date=date;t.notes=document.getElementById('et-notes').value.trim();
+  t.ctype=ctype;t.date=date;
+  t.notes=document.getElementById('et-notes').value.trim();
   t.cargoDetail=document.getElementById('et-cargo').value.trim();
   sDB(db);closeModal('modal-edit-trip');renderAdminTrips();
 }
@@ -1602,9 +1653,9 @@ function showPayrollDetail(uid,wS,wE){
       </div>
     </div>
     ${trips.length?trips.map(t=>{
-      const d=dests[t.di];const r=getRate(t);const pay=isDr?r.dp:r.ap;const wp=isDr?t.driverPaid:t.asstPaid;
+      const r=getRate(t);const pay=isDr?r.dp:r.ap;const wp=isDr?t.driverPaid:t.asstPaid;
       return`<div class="card" style="margin-bottom:10px">
-        <div class="trip-hdr"><div class="trip-dest">${d?d.n.split('/')[0].trim():'—'}</div>${badge(t.status)}</div>
+        <div class="trip-hdr"><div class="trip-dest">${dn}</div>${badge(t.status)}</div>
         <div class="trip-meta" style="margin-bottom:8px">
           <div class="trip-meta-i">📅 <span>${t.date}</span></div>
           <div class="trip-meta-i">⚖️ <span>${t.tonnage}</span></div>
@@ -1728,9 +1779,9 @@ function shareWorkerPayroll(uid,wS,wE){
   const total=done.reduce((s,t)=>{const r=getRate(t);return s+(isDr?r.dp:r.ap);},0);
   const lines=[{type:'header',left:'DESTINATION',right:'EARNING'}];
   trips.forEach(t=>{
-    const d=dests[t.di];const r=getRate(t);const pay=isDr?r.dp:r.ap;
+    const r=getRate(t);const pay=isDr?r.dp:r.ap;
     const wp=isDr?t.driverPaid:t.asstPaid;
-    lines.push({left:`${d?d.n.split('/')[0].trim():'—'} · ${t.tonnage} · ${t.date}`,right:t.status==='Completed'?jmd(pay):'Pending',accent:t.status==='Completed'&&!wp,green:wp,dim:t.status!=='Completed'});
+    lines.push({left:`${tripDestName(t)} · ${t.tonnage} · ${t.date}`,right:t.status==='Completed'?jmd(pay):'Pending',accent:t.status==='Completed'&&!wp,green:wp,dim:t.status!=='Completed'});
   });
   lines.push({type:'header',left:`TOTAL (${done.length} completed)`,right:jmd(total)});
   const cv=buildPayrollCanvas(lines,`${w.name} — Pay Slip`,wb.lb);
@@ -1741,7 +1792,7 @@ function shareWorkerPayroll(uid,wS,wE){
 let activeContractId=null;
 function renderAdminContracts(){
   const db=gDB();
-  const BUILT_IN=['tonnage','wisynco','hipro'];
+  const BUILT_IN=['tonnage','wisynco','hipro','hipro_feed','hipro_chick'];
   document.getElementById('admin-content').innerHTML=`
     <div class="sec-hdr"><div class="sec-ttl">Contracts</div><button class="btn-sm btn-accent" onclick="openAddContractModal()">+ New</button></div>
     <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:#FCD34D;line-height:1.7">
@@ -1752,8 +1803,8 @@ function renderAdminContracts(){
     <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Each contract has its own pricing and driver/assistant payouts per destination.</p>
     ${db.contracts.length?db.contracts.map(c=>{
       const count=Object.keys(c.rates||{}).length;
-      const hasRates=Object.values(c.rates||{}).some(r=>r.clientRate>0);
-      const needsUpload=c.id==='hipro'&&!hasRates;
+      const hasRates=Object.values(c.rates||{}).some(r=>r&&r.clientRate>0);
+      const needsUpload=!hasRates&&!BUILT_IN.includes(c.id);
       return`<div class="card" style="${needsUpload?'border-color:rgba(245,158,11,.5)':''}">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
           <div>
@@ -1834,7 +1885,7 @@ function saveNewContract(){
 }
 function delContract(cid){
   if(cid==='tonnage'||cid==='wisynco'){alert('The Tonnage Contract is built-in and cannot be removed.');return;}
-  if(cid==='hipro'){alert('The HI Pro Contract is built-in and cannot be removed.');return;}
+  if(cid==='hipro_feed'||cid==='hipro_chick'||cid==='hipro'){alert('HI Pro contracts are built-in and cannot be removed.');return;}
   if(!confirm('Delete this contract and all its rates?'))return;
   const db=gDB();db.contracts=db.contracts.filter(c=>c.id!==cid);sDB(db);renderAdminContracts();
 }
@@ -2031,10 +2082,10 @@ function renderWorkerTrips(conId,role,sel){
     </div>
     <div class="sec-hdr"><div class="sec-ttl">Trip Details</div></div>
     ${trips.length?trips.map(t=>{
-      const d2=dests[t.di];const r=getRate(t);const pay=isDr?r.dp:r.ap;const isAsgn=t.status==='Assigned';
+      const d2n=tripDestName(t);const r=getRate(t);const pay=isDr?r.dp:r.ap;const isAsgn=t.status==='Assigned';
       const wp=isDr?t.driverPaid:t.asstPaid;
       return`<div class="trip-card" style="cursor:default;${isAsgn?'border-color:rgba(251,191,36,.5)':''}">
-        <div class="trip-hdr"><div class="trip-dest">${d2?d2.n.split('/')[0].trim():'-'}</div>${badge(t.status)}</div>
+        <div class="trip-hdr"><div class="trip-dest">${d2n}</div>${badge(t.status)}</div>
         <div class="trip-meta">
           <div class="trip-meta-i">📅 <span>${t.date}</span></div>
           <div class="trip-meta-i">⚖️ <span>${t.tonnage}</span></div>
@@ -2042,7 +2093,7 @@ function renderWorkerTrips(conId,role,sel){
         </div>
         ${t.notes?`<div style="font-size:12px;color:var(--muted);margin-top:7px;padding:7px 10px;background:var(--surface);border-radius:8px">📝 ${t.notes}</div>`:''}
         ${t.cargoDetail?`<div style="font-size:12px;color:var(--muted);margin-top:5px;padding:7px 10px;background:var(--surface);border-radius:8px">📦 ${t.cargoDetail}</div>`:''}
-        ${(t.status==='Assigned'||t.status==='In Progress')&&d2?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d2.n.split('/')[0].trim()+', Jamaica')}" target="_blank" style="display:block;text-align:center;background:rgba(59,130,246,.15);color:#60A5FA;border:1px solid rgba(59,130,246,.3);border-radius:9px;padding:9px;font-size:13px;font-weight:600;text-decoration:none;margin-top:8px">📍 Get Directions to ${d2.n.split('/')[0].trim()}</a>`:''}
+        ${(t.status==='Assigned'||t.status==='In Progress')?`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(d2n+', Jamaica')}" target="_blank" style="display:block;text-align:center;background:rgba(59,130,246,.15);color:#60A5FA;border:1px solid rgba(59,130,246,.3);border-radius:9px;padding:9px;font-size:13px;font-weight:600;text-decoration:none;margin-top:8px">📍 Get Directions to ${d2n}</a>`:''}
         ${t.pod?`<div style="margin-top:8px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:10px;padding:10px">
           <div style="font-size:11px;color:#34D399;font-weight:600;margin-bottom:4px">✓ POD Recorded</div>
           ${t.pod.photo?`<img src="${t.pod.photo}" style="width:100%;border-radius:6px;max-height:120px;object-fit:cover;margin-bottom:6px"/>`:''}
@@ -2136,10 +2187,10 @@ function renderWorkerEarnings(conId,role){
           </div>
         </div>`:'<div style="font-size:12px;color:var(--muted);text-align:center;padding:6px 0">No completed trips this week</div>'}
         ${w.trips.length?`<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
-          ${w.trips.map(t=>{const d=dests[t.di];const r=getRate(t);const pay=isDr?r.dp:r.ap;const wp=isDr?t.driverPaid:t.asstPaid;
+          ${w.trips.map(t=>{const r=getRate(t);const pay=isDr?r.dp:r.ap;const wp=isDr?t.driverPaid:t.asstPaid;
             return`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(36,53,82,.5)">
               <div>
-                <div style="font-size:12px;font-weight:600">${d?d.n.split('/')[0].trim():'—'}</div>
+                <div style="font-size:12px;font-weight:600">${tripDestName(t)}</div>
                 <div style="font-size:11px;color:var(--muted)">${t.date} · ${t.tonnage}</div>
               </div>
               <div style="text-align:right">
@@ -2211,9 +2262,9 @@ function renderMyBookings(){
     </div>
     <div class="sec-hdr"><div class="sec-ttl">Trip History</div></div>
     ${trips.length?trips.map(t=>{
-      const d=dests[t.di];const r=getRate(t);
+      const r=getRate(t);
       return`<div class="trip-card" style="cursor:default">
-        <div class="trip-hdr"><div class="trip-dest">${d?d.n.split('/')[0].trim():'-'}</div>${badge(t.status)}</div>
+        <div class="trip-hdr"><div class="trip-dest">${tripDestName(t)}</div>${badge(t.status)}</div>
         <div class="trip-meta">
           <div class="trip-meta-i">📅 <span>${t.date}</span></div>
           <div class="trip-meta-i">⚖️ <span>${t.tonnage}</span></div>
@@ -2291,8 +2342,8 @@ function checkVehicleAvail(vid,date){
 }
 
 function confirmAssignment(tid,conId,role,sel){
-  const db=gDB();const dests=gDEST();const t=db.trips.find(x=>x.id===tid);if(!t)return;
-  const dest=dests[t.di]?dests[t.di].n.split('/')[0].trim():'your destination';
+  const db=gDB();const t=db.trips.find(x=>x.id===tid);if(!t)return;
+  const dest=tripDestName(t);
   const dr=db.users.find(u=>u.id===t.driverId);
   const admin=db.users.find(u=>u.role==='admin');
   t.status='In Progress';
@@ -2521,8 +2572,8 @@ function downloadQuote(di,ton){
 </body></html>`);
 }
 function dlInvoice(tid){
-  const db=gDB();const dests=gDEST();const t=db.trips.find(x=>x.id===tid);if(!t)return;
-  const d=dests[t.di];const r=getRate(t);const v=db.vehicles.find(x=>x.id===t.vehicleId);
+  const db=gDB();const t=db.trips.find(x=>x.id===tid);if(!t)return;
+  const destN=tripDestName(t);const r=getRate(t);const v=db.vehicles.find(x=>x.id===t.vehicleId);
   const dt=new Date().toLocaleDateString('en-JM',{year:'numeric',month:'long',day:'numeric'});
   const ref='INV-'+t.id.toUpperCase();
   const pc=t.pstatus==='Paid'?'#065F46':'#991B1B';const pb=t.pstatus==='Paid'?'#D1FAE5':'#FEE2E2';
@@ -2533,7 +2584,7 @@ function dlInvoice(tid){
 <div class="row"><span>Client</span><span>${t.clientName}</span></div>
 ${t.clientPhone?`<div class="row"><span>Phone</span><span>${t.clientPhone}</span></div>`:''}
 <h3>Trip Details</h3>
-<div class="row"><span>Destination</span><span>${d?d.n.split('/')[0].trim():'—'}</span></div>
+<div class="row"><span>Destination</span><span>${destN}</span></div>
 <div class="row"><span>Date</span><span>${t.date}</span></div>
 <div class="row"><span>Truck Size</span><span>${t.tonnage}</span></div>
 ${v?`<div class="row"><span>Vehicle</span><span>${v.plate} · ${v.model}</span></div>`:''}
@@ -2593,7 +2644,7 @@ function savePOD(){
 }
 function sendPODToClient(tid){
   const db=gDB();const dests=gDEST();const t=db.trips.find(x=>x.id===tid);if(!t||!t.pod)return;
-  const dest=dests[t.di]?dests[t.di].n.split('/')[0].trim():'your destination';
+  const dest=tripDestName(t);
   const phone=(t.clientPhone||'').replace(/[^0-9]/g,'');
   if(!phone){alert('No client phone number on file for this trip.');return;}
   const cargo=t.cargoDetail?`\nCargo: ${t.cargoDetail}`:'';
@@ -2606,7 +2657,7 @@ function sendPODToClient(tid){
 function sendNotification(tid){
   const db=gDB();const t=db.trips.find(x=>x.id===tid);if(!t)return;
   const pending=(db.notifications||[]).find(n=>n.tripId===tid&&n.status===t.status&&!n.sent);
-  const dests=gDEST();const dest=dests[t.di]?dests[t.di].n.split('/')[0].trim():'destination';
+  const dests=gDEST();const dest=tripDestName(t);
   const msg=pending?pending.msg:('Khalorna Xpress Update\n\nTrip to '+dest+' — Status: '+t.status+'\nRef: '+t.id.toUpperCase()+'\n\nKhalorna Xpress · 876-559-3028');
   const phone=(t.clientPhone||'').replace(/[^0-9]/g,'');
   if(!phone){alert('No client phone number on file for this trip.');return;}
@@ -2617,7 +2668,7 @@ function sendNotification(tid){
 
 // ── NOTIFICATION INBOX ──
 function renderAdminInbox(){
-  const db=gDB();const dests=gDEST();
+  const db=gDB();
   const notifs=[...(db.notifications||[])].sort((a,b)=>b.ts.localeCompare(a.ts));
   const unsent=notifs.filter(n=>!n.sent).length;
   document.getElementById('admin-content').innerHTML=`
@@ -2631,7 +2682,7 @@ function renderAdminInbox(){
     ${notifs.length===0?'<div class="empty-state"><div class="ei">🔔</div><p>No notifications yet.<br>They appear here when trip statuses change.</p></div>':
     notifs.map(n=>{
       const t=db.trips.find(x=>x.id===n.tripId);
-      const dest=t?dests[t.di]?dests[t.di].n.split('/')[0].trim():'—':'—';
+      const dest=t?tripDestName(t):'—';
       const phone=(n.clientPhone||'').replace(/[^0-9]/g,'');
       const when=new Date(n.ts).toLocaleString('en-JM',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
       return`<div class="card" style="margin-bottom:10px;${n.sent?'opacity:.7':'border-color:rgba(245,166,35,.3)'}">
@@ -2758,17 +2809,16 @@ function delExpense(eid){
 
 // ── RECURRING TRIPS ──
 function renderAdminRecurring(){
-  const db=gDB();const recs=db.recurring||[];const dests=gDEST();
+  const db=gDB();const recs=db.recurring||[];
   document.getElementById('admin-content').innerHTML=`
     <div class="sec-hdr"><div style="display:flex;align-items:center;gap:10px"><button class="btn-sm btn-ghost" onclick="adminTab('dashboard',document.getElementById('nav-dashboard'))">← Home</button><div class="sec-ttl">Recurring Trips</div></div></div>
     <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Scheduled trips auto-generate on their next date. Tap "Generate Now" to create the next booking.</p>
     ${recs.length?recs.map(r=>{
-      const d=dests[r.di];
       return`<div class="card" style="margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
           <div>
             <div style="font-weight:700;font-size:15px">${r.clientName}</div>
-            <div style="font-size:12px;color:var(--muted);margin-top:3px">${d?d.n.split('/')[0].trim():'—'} · ${r.tonnage} · ${_ctypeName(r.ctype,db)}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px">${tripDestName(r)} · ${r.tonnage} · ${_ctypeName(r.ctype,db)}</div>
           </div>
           <span class="badge ${r.active?'bdg-prog':'bdg-unpaid'}">${r.active?r.freq:'Paused'}</span>
         </div>
@@ -2786,6 +2836,9 @@ function renderAdminRecurring(){
 }
 function _ctypeName(ctype,db){
   if(ctype==='private')return'Private Work';
+  if(ctype==='tonnage')return'Tonnage Contract';
+  if(ctype==='hipro_feed')return'HI Pro — Feed';
+  if(ctype==='hipro_chick')return'HI Pro — Baby Chick';
   const c=(db.contracts||[]).find(x=>x.id===ctype);
   return c?c.name:ctype;
 }
@@ -2855,8 +2908,8 @@ function exportCSV(){
   const db=gDB();const dests=gDEST();
   const rows=[['ID','Date','Client','Phone','Destination','Tonnage','Contract','Status','Invoice','Driver Pay','Asst Pay','Net','Payment','Cargo','POD','Completion Note']];
   db.trips.forEach(t=>{
-    const d=dests[t.di];const r=getRate(t);
-    rows.push([t.id,t.date,t.clientName,t.clientPhone||'',d?d.n.split('/')[0].trim():'',t.tonnage,_ctypeName(t.ctype,db),t.status,r.price,r.dp,r.ap,r.price-r.dp-r.ap,t.pstatus,t.cargoDetail||'',t.pod?'Yes':'No',t.completionNote||'']);
+    const r=getRate(t);
+    rows.push([t.id,t.date,t.clientName,t.clientPhone||'',tripDestName(t),t.tonnage,_ctypeName(t.ctype,db),t.status,r.price,r.dp,r.ap,r.price-r.dp-r.ap,t.pstatus,t.cargoDetail||'',t.pod?'Yes':'No',t.completionNote||'']);
   });
   dlCSV(rows,'khalorna-trips.csv');
 }
