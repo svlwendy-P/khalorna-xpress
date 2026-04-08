@@ -40,11 +40,11 @@ jobs:
 
       - name: Validate HTML file
         run: |
-          if [ ! -f fleetflow.html ]; then
-            echo "ERROR: fleetflow.html not found in repo root"
+          if [ ! -f index.html ]; then
+            echo "ERROR: index.html not found in repo root"
             exit 1
           fi
-          echo "fleetflow.html found ($(wc -c < fleetflow.html) bytes)"
+          echo "index.html found ($(wc -c < index.html) bytes)"
 
       - name: Set up GitHub Pages
         uses: actions/configure-pages@v4
