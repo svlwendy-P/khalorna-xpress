@@ -119,6 +119,26 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
 .text-acc{color:var(--accent);}.text-g{color:var(--green);}.text-b{color:var(--blue);}
 .demo-hint{text-align:center;font-size:11px;color:var(--muted);margin-top:14px;line-height:1.7;}
 @media(min-width:430px){.app-wrap{box-shadow:0 0 80px rgba(0,0,0,.8);}}
+@media(min-width:768px){
+  .app-wrap{max-width:600px;}
+  .stat-grid{grid-template-columns:1fr 1fr 1fr;}
+  .modal-sheet{border-radius:16px;margin:auto;max-height:85vh;}
+  .modal-overlay{align-items:center;}
+  .bottom-nav{max-width:600px;}
+  .page-content{padding:20px 24px 100px;}
+  .form-input,.form-select{font-size:15px;}
+  .trip-card,.card{border-radius:18px;}
+}
+@media(min-width:1024px){
+  .app-wrap{max-width:720px;}
+  .bottom-nav{max-width:720px;}
+  .stat-grid{grid-template-columns:repeat(4,1fr);}
+  .modal-sheet{max-width:520px;width:100%;}
+  .page-content{padding:24px 32px 100px;}
+  html,body{font-size:15px;}
+  .nav-item{min-width:72px;font-size:10px;}
+  .role-grid{grid-template-columns:repeat(4,1fr);}
+}
 </style>
 
 <!-- PWA -->
@@ -191,7 +211,6 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
         <span style="font-size:20px">🔔</span>
         <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;align-items:center;justify-content:center"></span>
       </div>
-      <span style="font-size:20px;cursor:pointer" title="Change Password" onclick="openChangePass(null,true)">🔒</span>
       <div style="font-size:12px;color:var(--muted)">Admin</div>
       <div class="avatar" onclick="doLogout()">AD</div>
     </div>
@@ -209,6 +228,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
     <div class="nav-item" id="nav-destinations" onclick="adminTab('destinations',this)"><span class="ni">📍</span><span>Zones</span></div>
     <div class="nav-item" id="nav-reports" onclick="adminTab('reports',this)"><span class="ni">📊</span><span>Reports</span></div>
     <div class="nav-item" id="nav-inbox" onclick="adminTab('inbox',this)"><span class="ni">🔔</span><span>Inbox</span></div>
+    <div class="nav-item" id="nav-settings" onclick="adminTab('settings',this)"><span class="ni">⚙️</span><span>Settings</span></div>
   </nav>
 </div>
 
@@ -226,6 +246,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
     <div class="nav-item active" id="drv-nav-trips" onclick="workerNav('driver','trips',this)"><span class="ni">📋</span><span>My Trips</span></div>
     <div class="nav-item" id="drv-nav-earn" onclick="workerNav('driver','earnings',this)"><span class="ni">💰</span><span>Earnings</span></div>
     <div class="nav-item" id="drv-nav-book" onclick="workerNav('driver','book',this)"><span class="ni">➕</span><span>Book Trip</span></div>
+    <div class="nav-item" id="drv-nav-account" onclick="workerNav('driver','account',this)"><span class="ni">👤</span><span>Account</span></div>
   </nav>
 </div>
 
@@ -243,6 +264,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
     <div class="nav-item active" id="ast-nav-trips" onclick="workerNav('assistant','trips',this)"><span class="ni">📋</span><span>My Trips</span></div>
     <div class="nav-item" id="ast-nav-earn" onclick="workerNav('assistant','earnings',this)"><span class="ni">💰</span><span>Earnings</span></div>
     <div class="nav-item" id="ast-nav-book" onclick="workerNav('assistant','book',this)"><span class="ni">➕</span><span>Book Trip</span></div>
+    <div class="nav-item" id="ast-nav-account" onclick="workerNav('assistant','account',this)"><span class="ni">👤</span><span>Account</span></div>
   </nav>
 </div>
 
@@ -259,6 +281,7 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
       <button class="tab-btn active" onclick="clientTab('quote',this)">Get Quote</button>
       <button class="tab-btn" onclick="clientTab('book',this)">Book Trip</button>
       <button class="tab-btn" onclick="clientTab('mybookings',this)">My Bookings</button>
+      <button class="tab-btn" onclick="clientTab('account',this)">Account</button>
     </div>
     <div id="client-content"></div>
   </div>
@@ -620,36 +643,6 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
   </div>
 </div>
 
-</div>
-  <div class="modal-sheet"><div class="modal-handle"></div>
-    <div class="modal-title">Change Password</div>
-    <div id="change-pass-alert"></div>
-    <input type="hidden" id="cp-uid"/>
-    <input type="hidden" id="cp-admin-mode"/>
-    <div id="cp-current-wrap" class="form-group"><label>Current Password</label>
-      <div style="position:relative">
-        <input class="form-input" id="cp-current" type="password" placeholder="Enter current password" style="padding-right:48px"/>
-        <button type="button" onclick="togglePassVis('cp-current','eye-cp-cur')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);padding:4px" id="eye-cp-cur">👁</button>
-      </div>
-    </div>
-    <div class="form-group"><label>New Password</label>
-      <div style="position:relative">
-        <input class="form-input" id="cp-new" type="password" placeholder="Min 6 characters" style="padding-right:48px"/>
-        <button type="button" onclick="togglePassVis('cp-new','eye-cp-new')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);padding:4px" id="eye-cp-new">👁</button>
-      </div>
-    </div>
-    <div class="form-group"><label>Confirm New Password</label>
-      <div style="position:relative">
-        <input class="form-input" id="cp-confirm" type="password" placeholder="Re-enter new password" style="padding-right:48px"/>
-        <button type="button" onclick="togglePassVis('cp-confirm','eye-cp-con')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:var(--muted);padding:4px" id="eye-cp-con">👁</button>
-      </div>
-    </div>
-    <button class="btn-primary" onclick="saveChangePass()">Update Password</button>
-    <button class="btn-secondary" style="width:100%;margin-top:10px" onclick="closeModal('modal-change-pass')">Cancel</button>
-  </div>
-</div>
-
-</div>
 <script>
 // ── DESTINATIONS ── p=private client rate, d5/a5/d7/a7/d10/a10=private driver/asst pay (flat),
 // w5/wd5/wa5 ... w10/wd10/wa10 = tonnage contract client rate + driver/asst pay per tonnage tier
@@ -717,6 +710,7 @@ const HIPRO_DEST=[
 ];
 // ── DB ──
 function gDB(){
+  try{
   const r=localStorage.getItem('kx_v6');
   if(r){
     const d=JSON.parse(r);
@@ -826,8 +820,58 @@ function gDB(){
     localStorage.setItem('kx_v6',JSON.stringify(d));localStorage.removeItem('kx_v5');return d;
   }
   return null;
+  }catch(e){
+    console.error('KX gDB error:',e);
+    try{localStorage.removeItem('kx_v6');}catch(_){}
+    return null;
+  }
 }
-function sDB(d){localStorage.setItem('kx_v6',JSON.stringify(d));}
+
+// ── GitHub Sync ──
+const GH={
+  cfg(){try{return JSON.parse(localStorage.getItem('kx_ghconf')||'null');}catch{return null;}},
+  save(c){localStorage.setItem('kx_ghconf',JSON.stringify(c));},
+  _timer:null,
+  push(data){
+    const c=GH.cfg();if(!c||!c.token||!c.repo)return;
+    clearTimeout(GH._timer);
+    GH._timer=setTimeout(async()=>{
+      try{
+        const url=`https://api.github.com/repos/${c.repo}/contents/${c.path||'data/kx_data.json'}`;
+        const headers={'Authorization':'token '+c.token,'Content-Type':'application/json'};
+        let sha='';
+        try{const r=await fetch(url,{headers});if(r.ok){const j=await r.json();sha=j.sha||'';}}catch{}
+        const body={message:'KX data sync '+new Date().toISOString(),content:btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2)))),branch:c.branch||'main'};
+        if(sha)body.sha=sha;
+        const res=await fetch(url,{method:'PUT',headers,body:JSON.stringify(body)});
+        if(res.ok)GH._showStatus('✓ Synced to GitHub','#10B981');
+        else GH._showStatus('⚠ GitHub sync failed','#F87171');
+      }catch(e){console.warn('GH push:',e);}
+    },2500);
+  },
+  async pull(){
+    const c=GH.cfg();if(!c||!c.token||!c.repo)return null;
+    try{
+      const url=`https://api.github.com/repos/${c.repo}/contents/${c.path||'data/kx_data.json'}`;
+      const r=await fetch(url,{headers:{'Authorization':'token '+c.token}});
+      if(!r.ok)return null;
+      const j=await r.json();
+      const raw=decodeURIComponent(escape(atob(j.content.replace(/\n/g,''))));
+      return JSON.parse(raw);
+    }catch(e){console.warn('GH pull:',e);return null;}
+  },
+  _showStatus(msg,color){
+    let el=document.getElementById('gh-sync-toast');
+    if(!el){el=document.createElement('div');el.id='gh-sync-toast';el.style.cssText='position:fixed;top:60px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 16px;font-size:12px;font-weight:600;z-index:9999;transition:opacity .4s';document.body.appendChild(el);}
+    el.style.color=color;el.textContent=msg;el.style.opacity='1';
+    setTimeout(()=>el.style.opacity='0',3000);
+  }
+};
+
+function sDB(d){
+  try{localStorage.setItem('kx_v6',JSON.stringify(d));}catch(e){console.error('sDB error:',e);}
+  GH.push(d);
+}
 function gDEST(){const db=gDB();return(db&&db.destinations&&db.destinations.length)?db.destinations:DEST;}
 function ds(o=0){const d=new Date();d.setDate(d.getDate()+o);return d.toISOString().split('T')[0];}
 function weekRange(sel){const d=new Date(sel+'T00:00:00'),dow=d.getDay(),mon=new Date(d);mon.setDate(d.getDate()-(dow===0?6:dow-1));const sun=new Date(mon);sun.setDate(mon.getDate()+6);const s=mon.toISOString().split('T')[0],e=sun.toISOString().split('T')[0];const lb=`${mon.toLocaleDateString('en-JM',{month:'short',day:'numeric'})} – ${sun.toLocaleDateString('en-JM',{month:'short',day:'numeric',year:'numeric'})}`;return{s,e,lb};}
@@ -865,7 +909,17 @@ function initDB(){
       {id:'hipro_feed',name:'HI Pro — Feed',description:'HI Pro contract: Feed deliveries (5T & 7T)',color:'#F59E0B',rates:{"0_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"0_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"1_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"1_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"2_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"2_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"3_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"3_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"4_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"4_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"5_5T":{"clientRate":20046.42,"driverPay":2500,"asstPay":2500},"5_7T":{"clientRate":22046.42,"driverPay":3500,"asstPay":3500},"6_5T":{"clientRate":13364.28,"driverPay":2500,"asstPay":2500},"6_7T":{"clientRate":15364.28,"driverPay":3500,"asstPay":3500},"7_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"7_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"8_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"8_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"9_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"9_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"10_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"10_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"11_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"11_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"12_5T":{"clientRate":25499.05,"driverPay":3500,"asstPay":3000},"12_7T":{"clientRate":27499.05,"driverPay":4500,"asstPay":4000},"13_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"13_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"14_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"14_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"15_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"15_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"16_5T":{"clientRate":30737.85,"driverPay":4000,"asstPay":3500},"16_7T":{"clientRate":32737.85,"driverPay":5000,"asstPay":4500},"17_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"17_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000},"18_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"18_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000},"19_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"19_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000},"20_5T":{"clientRate":33410.7,"driverPay":4500,"asstPay":4000},"20_7T":{"clientRate":35410.7,"driverPay":5500,"asstPay":5000}}},
       {id:'hipro_chick',name:'HI Pro — Baby Chick',description:'HI Pro contract: Baby Chick deliveries (5T & 7T)',color:'#EC4899',rates:{"0_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"0_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"1_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"1_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"2_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"2_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"3_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"3_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"4_5T":{"clientRate":31923.07,"driverPay":4000,"asstPay":3500},"4_7T":{"clientRate":33923.07,"driverPay":5000,"asstPay":4500},"7_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"7_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"8_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"8_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"9_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"9_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"10_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"10_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"12_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"12_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"13_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"13_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"14_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"14_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"15_5T":{"clientRate":36272.94,"driverPay":4500,"asstPay":4000},"15_7T":{"clientRate":38272.94,"driverPay":5500,"asstPay":5000},"16_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"16_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000},"17_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"17_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000},"21_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"21_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000},"19_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"19_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000},"20_5T":{"clientRate":39903.09,"driverPay":5500,"asstPay":5000},"20_7T":{"clientRate":41903.09,"driverPay":6500,"asstPay":6000}}},
     ],
-    trips:[]
+    trips:[
+      {id:'t1',clientName:'Xpress Ltd',clientPhone:'876-559-3028',di:19,tonnage:'5T',ctype:'private',vehicleId:'v1',driverId:'u2',assistantId:'u4',status:'Completed',date:ds(-2),notes:'',cargoDetail:'Frozen goods',pstatus:'Paid',driverPaid:true,asstPaid:true,pod:null,notified:{}},
+      {id:'t2',clientName:'Devon Brown',clientPhone:'876-555-0400',di:8,tonnage:'7T',ctype:'tonnage',vehicleId:'v2',driverId:'u3',assistantId:null,status:'Completed',date:ds(-3),notes:'Fragile cargo',cargoDetail:'',pstatus:'Unpaid',driverPaid:false,asstPaid:false,pod:null,notified:{}},
+      {id:'t3',clientName:'Grace Kennedy Ltd',clientPhone:'876-926-3720',di:1,tonnage:'5T',ctype:'private',vehicleId:'v1',driverId:'u2',assistantId:'u4',status:'In Progress',date:ds(0),notes:'Handle with care',cargoDetail:'Dry goods',pstatus:'Unpaid',driverPaid:false,asstPaid:false,pod:null,notified:{}},
+      {id:'t4',clientName:'Carib Cement Co',clientPhone:'876-922-5013',di:5,tonnage:'7T',ctype:'tonnage',vehicleId:'v2',driverId:'u3',assistantId:null,status:'Assigned',date:ds(1),notes:'',cargoDetail:'Building materials',pstatus:'Unpaid',driverPaid:false,asstPaid:false,pod:null,notified:{}},
+      {id:'t5',clientName:'Xpress Ltd',clientPhone:'876-559-3028',di:7,tonnage:'5T',ctype:'private',vehicleId:'v1',driverId:'u2',assistantId:'u4',status:'Completed',date:ds(-5),notes:'',cargoDetail:'',pstatus:'Paid',driverPaid:true,asstPaid:true,pod:null,notified:{}},
+      {id:'t6',clientName:'NHT Kingston',clientPhone:'876-929-6500',di:2,tonnage:'7T',ctype:'tonnage',vehicleId:'v2',driverId:'u3',assistantId:null,status:'Completed',date:ds(-4),notes:'',cargoDetail:'',pstatus:'Paid',driverPaid:true,asstPaid:false,pod:null,notified:{}},
+      {id:'t7',clientName:'Xpress Ltd',clientPhone:'876-559-3028',di:15,tonnage:'7T',ctype:'private',vehicleId:null,driverId:null,assistantId:null,status:'Booked',date:ds(2),notes:'Call before arrival',cargoDetail:'Refrigerated poultry',pstatus:'Unpaid',driverPaid:false,asstPaid:false,pod:null,notified:{}},
+      {id:'t8',clientName:'Jamaica Broilers',clientPhone:'876-984-3098',di:7,hdi:7,tonnage:'5T',ctype:'hipro_feed',vehicleId:'v1',driverId:'u2',assistantId:'u4',status:'Completed',date:ds(-1),notes:'',cargoDetail:'Broiler feed',pstatus:'Unpaid',driverPaid:false,asstPaid:false,pod:null,notified:{}},
+      {id:'t9',clientName:'Jamaica Broilers',clientPhone:'876-984-3098',di:0,hdi:2,tonnage:'5T',ctype:'hipro_chick',vehicleId:'v2',driverId:'u3',assistantId:null,status:'Booked',date:ds(3),notes:'',cargoDetail:'Day-old chicks',pstatus:'Unpaid',driverPaid:false,asstPaid:false,pod:null,notified:{}},
+    ]
   });
 }
 
@@ -941,7 +995,12 @@ function doLogin(){
   }
   al.innerHTML='';CU=user;showScreen(user.role);
 }
-function doLogout(){CU=null;showScreen('login');}
+function doLogout(){
+  CU=null;
+  try{sessionStorage.removeItem('kx_session');}catch{}
+  history.replaceState(null,'','#');
+  showScreen('login');
+}
 function showScreen(role){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   if(role==='login'){
@@ -950,6 +1009,9 @@ function showScreen(role){
     document.getElementById('login-pass').value='';
     return;
   }
+  // Persist session so refresh restores state
+  try{sessionStorage.setItem('kx_session',JSON.stringify({role,uid:CU&&CU.id}));}catch{}
+  history.replaceState({role},'','#'+role);
   const m={admin:'screen-admin',driver:'screen-driver',assistant:'screen-assistant',client:'screen-client'};
   document.getElementById(m[role]).classList.add('active');
   if(role==='admin'){renderAdminDash();document.getElementById('admin-date-sub').textContent=new Date().toLocaleDateString('en-JM',{weekday:'long',month:'short',day:'numeric',year:'numeric'});}
@@ -957,12 +1019,19 @@ function showScreen(role){
   if(role==='assistant')renderWorker('assistant');
   if(role==='client'){renderClientTab();document.getElementById('client-name-sub').textContent='Welcome, '+CU.name.split(' ')[0];document.getElementById('client-avatar').textContent=ini(CU.name);}
 }
+// Prevent back-button from navigating away — treat it as logout
+window.addEventListener('popstate',()=>{
+  if(!CU){showScreen('login');return;}
+  const h=location.hash.replace('#','');
+  const roles=['admin','driver','assistant','client'];
+  if(roles.includes(h))showScreen(h);else{doLogout();}
+});
 
 // ── ADMIN ──
 function adminTab(tab,el){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   el.classList.add('active');
-  ({dashboard:renderAdminDash,trips:renderAdminTrips,users:renderAdminUsers,vehicles:renderAdminVehicles,payroll:renderAdminPayroll,expenses:renderAdminExpenses,contracts:renderAdminContracts,destinations:renderAdminDestinations,recurring:renderAdminRecurring,reports:renderAdminReports,inbox:renderAdminInbox})[tab]();
+  ({dashboard:renderAdminDash,trips:renderAdminTrips,users:renderAdminUsers,vehicles:renderAdminVehicles,payroll:renderAdminPayroll,expenses:renderAdminExpenses,contracts:renderAdminContracts,destinations:renderAdminDestinations,recurring:renderAdminRecurring,reports:renderAdminReports,inbox:renderAdminInbox,settings:renderAdminSettings})[tab]();
 }
 
 let _dashFrom=ds(-30),_dashTo=ds(0);
@@ -1421,7 +1490,7 @@ function uList(role,db){
         <div class="l-info"><div class="l-name">${u.name}</div><div class="l-sub">@${u.username} · ${u.phone||'—'}</div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0">
           <button class="btn-sm btn-ghost" onclick="openEditUserModal('${u.id}')">Edit</button>
-          <button class="btn-sm btn-blue" style="color:#fff" onclick="openChangePass('${u.id}',true)">🔒</button>
+          <button class="btn-sm btn-ghost" onclick="adminResetUserPwd('${u.id}')">🔑 Reset</button>
           <button class="btn-sm btn-red" onclick="delUser('${u.id}')">✕</button>
         </div>
       </div>
@@ -2020,10 +2089,11 @@ function workerNav(role,tab,el){
   el.classList.add('active');
   const conId=role==='driver'?'driver-content':'asst-content';
   const sub=document.getElementById(role==='driver'?'driver-sub-bar':'asst-sub-bar');
-  const labels={trips:'My Trips',earnings:'My Earnings',book:'Book a Trip'};
+  const labels={trips:'My Trips',earnings:'My Earnings',book:'Book a Trip',account:'Account'};
   sub.textContent=labels[tab]||tab;
   if(tab==='trips')renderWorkerTrips(conId,role,ds(0));
   else if(tab==='earnings')renderWorkerEarnings(conId,role);
+  else if(tab==='account')renderWorkerAccount(conId,role);
   else renderWorkerBook(role);
 }
 function renderWorker(role){
@@ -2441,7 +2511,7 @@ function clientTab(tab,el){
   document.querySelectorAll('#screen-client .tab-btn').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');curCTab=tab;renderClientTab();
 }
-function renderClientTab(){({quote:renderQuote,book:renderBook,mybookings:renderMyBookings})[curCTab]();}
+function renderClientTab(){({quote:renderQuote,book:renderBook,mybookings:renderMyBookings,account:renderClientAccount})[curCTab]();}
 function renderQuote(){
   const dests=gDEST();
   document.getElementById('client-content').innerHTML=`
@@ -3089,8 +3159,207 @@ window.addEventListener('online',()=>{
 // Check on load
 if(!navigator.onLine)showOfflineToast('You\'re offline — using saved data. WhatsApp links will work when reconnected.');
 
+// ── ADMIN SETTINGS TAB (change own password + GitHub sync) ──
+function renderAdminSettings(){
+  const c=GH.cfg()||{};
+  document.getElementById('admin-content').innerHTML=`
+    <div class="sec-hdr"><div class="sec-ttl">Settings</div></div>
+    <div class="card" style="margin-bottom:14px">
+      <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:17px;font-weight:700;margin-bottom:14px">Change My Password</div>
+      <div id="admin-cp-alert"></div>
+      <div class="form-group"><label>Current Password</label>
+        <div style="position:relative"><input class="form-input" id="acp-cur" type="password" placeholder="Current password" style="padding-right:44px"/>
+        <button type="button" onclick="togglePassVis('acp-cur','acp-cur-eye')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)" id="acp-cur-eye">👁</button></div>
+      </div>
+      <div class="form-group"><label>New Password</label>
+        <div style="position:relative"><input class="form-input" id="acp-new" type="password" placeholder="Min 6 characters" style="padding-right:44px"/>
+        <button type="button" onclick="togglePassVis('acp-new','acp-new-eye')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)" id="acp-new-eye">👁</button></div>
+      </div>
+      <div class="form-group"><label>Confirm Password</label>
+        <div style="position:relative"><input class="form-input" id="acp-con" type="password" placeholder="Re-enter new password" style="padding-right:44px"/>
+        <button type="button" onclick="togglePassVis('acp-con','acp-con-eye')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)" id="acp-con-eye">👁</button></div>
+      </div>
+      <button class="btn-primary" onclick="saveAdminOwnPwd()">Update Password</button>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px">GitHub Data Sync</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Sync app data to a GitHub repo so it persists beyond this device.</p>
+      <div id="gh-config-alert"></div>
+      <div class="form-group"><label>Personal Access Token</label><input class="form-input" id="gh-token" type="password" placeholder="ghp_xxxxxxxxxxxxxxxx" value="${c.token||''}"/></div>
+      <div class="form-group"><label>Repo (owner/repo)</label><input class="form-input" id="gh-repo" placeholder="khalorna-xpress/khalorna-xpress" value="${c.repo||''}"/></div>
+      <div class="form-group"><label>Branch</label><input class="form-input" id="gh-branch" placeholder="main" value="${c.branch||'main'}"/></div>
+      <div class="form-group"><label>File Path</label><input class="form-input" id="gh-path" placeholder="data/kx_data.json" value="${c.path||'data/kx_data.json'}"/></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-primary" style="flex:2" onclick="saveGhConfig()">Save & Test Connection</button>
+        <button class="btn-sm btn-ghost" style="flex:1;padding:12px" onclick="syncFromGitHub()">⬇ Pull Now</button>
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:17px;font-weight:700;margin-bottom:14px">Data Management</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-sm btn-ghost" style="flex:1;padding:11px" onclick="exportBackup()">📤 Export Backup</button>
+        <button class="btn-sm btn-ghost" style="flex:1;padding:11px" onclick="document.getElementById('import-file').click()">📥 Import Backup</button>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importBackup(this)"/>
+      <p style="font-size:11px;color:var(--muted);margin-top:10px">Export saves a JSON backup of all data. Import restores from a previous export.</p>
+    </div>
+  `;
+}
+function saveAdminOwnPwd(){
+  const db=gDB();const al=document.getElementById('admin-cp-alert');
+  const cur=document.getElementById('acp-cur').value;
+  const nw=document.getElementById('acp-new').value;
+  const con=document.getElementById('acp-con').value;
+  const u=db.users.find(x=>x.id===CU.id);
+  if(!u){al.innerHTML='<div class="alert alert-err">User not found.</div>';return;}
+  if(u.password!==cur){al.innerHTML='<div class="alert alert-err">Current password is incorrect.</div>';return;}
+  if(nw.length<6){al.innerHTML='<div class="alert alert-err">New password must be at least 6 characters.</div>';return;}
+  if(nw!==con){al.innerHTML='<div class="alert alert-err">Passwords do not match.</div>';return;}
+  u.password=nw;sDB(db);
+  al.innerHTML='<div class="alert alert-ok">✓ Password updated successfully.</div>';
+  ['acp-cur','acp-new','acp-con'].forEach(id=>document.getElementById(id).value='');
+}
+function saveGhConfig(){
+  const al=document.getElementById('gh-config-alert');
+  const cfg={token:document.getElementById('gh-token').value.trim(),repo:document.getElementById('gh-repo').value.trim(),branch:document.getElementById('gh-branch').value.trim()||'main',path:document.getElementById('gh-path').value.trim()||'data/kx_data.json'};
+  if(!cfg.token||!cfg.repo){al.innerHTML='<div class="alert alert-err">Token and repo are required.</div>';return;}
+  GH.save(cfg);
+  al.innerHTML='<div class="alert alert-ok">✓ Saved. Testing connection…</div>';
+  GH.push(gDB());
+  setTimeout(()=>{if(al)al.innerHTML='<div class="alert alert-ok">✓ Configuration saved. Data will sync automatically on every save.</div>';},3000);
+}
+async function syncFromGitHub(){
+  const al=document.getElementById('gh-config-alert');
+  if(al)al.innerHTML='<div class="alert alert-ok">Pulling from GitHub…</div>';
+  const remote=await GH.pull();
+  if(!remote){if(al)al.innerHTML='<div class="alert alert-err">Could not pull from GitHub. Check token and repo.</div>';return;}
+  localStorage.setItem('kx_v6',JSON.stringify(remote));
+  if(al)al.innerHTML='<div class="alert alert-ok">✓ Data pulled from GitHub. Reloading…</div>';
+  setTimeout(()=>location.reload(),1200);
+}
+
+// ── ADMIN RESET USER PASSWORD (from Users tab) ──
+function adminResetUserPwd(uid){
+  const db=gDB();const u=db.users.find(x=>x.id===uid);if(!u)return;
+  const np=prompt(`Reset password for ${u.name}.\nEnter new password (min 6 chars):`);
+  if(!np)return;
+  if(np.length<6){alert('Password must be at least 6 characters.');return;}
+  u.password=np;sDB(db);
+  alert(`✓ Password reset for ${u.name}.`);
+}
+
+// ── WORKER ACCOUNT TAB ──
+function renderWorkerAccount(conId,role){
+  document.getElementById(conId).innerHTML=`
+    <div class="card">
+      <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px">My Account</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:18px">${CU&&CU.name||''}</div>
+      <div id="wcp-alert"></div>
+      <div class="form-group"><label>Current Password</label>
+        <div style="position:relative"><input class="form-input" id="wcp-cur" type="password" placeholder="Current password" style="padding-right:44px"/>
+        <button type="button" onclick="togglePassVis('wcp-cur','wcp-cur-eye')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)" id="wcp-cur-eye">👁</button></div>
+      </div>
+      <div class="form-group"><label>New Password</label>
+        <div style="position:relative"><input class="form-input" id="wcp-new" type="password" placeholder="Min 6 characters" style="padding-right:44px"/>
+        <button type="button" onclick="togglePassVis('wcp-new','wcp-new-eye')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)" id="wcp-new-eye">👁</button></div>
+      </div>
+      <div class="form-group"><label>Confirm Password</label>
+        <div style="position:relative"><input class="form-input" id="wcp-con" type="password" placeholder="Re-enter new password" style="padding-right:44px"/>
+        <button type="button" onclick="togglePassVis('wcp-con','wcp-con-eye')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)" id="wcp-con-eye">👁</button></div>
+      </div>
+      <button class="btn-primary" onclick="saveWorkerPwd()">Update Password</button>
+    </div>
+  `;
+}
+function saveWorkerPwd(){
+  const db=gDB();const al=document.getElementById('wcp-alert');
+  const cur=document.getElementById('wcp-cur').value;
+  const nw=document.getElementById('wcp-new').value;
+  const con=document.getElementById('wcp-con').value;
+  const u=db.users.find(x=>x.id===CU.id);
+  if(!u){al.innerHTML='<div class="alert alert-err">User not found.</div>';return;}
+  if(u.password!==cur){al.innerHTML='<div class="alert alert-err">Current password is incorrect.</div>';return;}
+  if(nw.length<6){al.innerHTML='<div class="alert alert-err">New password must be at least 6 characters.</div>';return;}
+  if(nw!==con){al.innerHTML='<div class="alert alert-err">Passwords do not match.</div>';return;}
+  u.password=nw;CU.password=nw;sDB(db);
+  al.innerHTML='<div class="alert alert-ok">✓ Password updated successfully.</div>';
+  ['wcp-cur','wcp-new','wcp-con'].forEach(id=>document.getElementById(id).value='');
+}
+
+// ── CLIENT ACCOUNT TAB ──
+function renderClientAccount(){
+  document.getElementById('client-content').innerHTML=`
+    <div class="card">
+      <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px">My Account</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:18px">${CU&&CU.name||''}</div>
+      <div id="ccp-alert"></div>
+      <div class="form-group"><label>Current Password</label>
+        <div style="position:relative"><input class="form-input" id="ccp-cur" type="password" placeholder="Current password" style="padding-right:44px"/>
+        <button type="button" onclick="togglePassVis('ccp-cur','ccp-cur-eye')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)" id="ccp-cur-eye">👁</button></div>
+      </div>
+      <div class="form-group"><label>New Password</label>
+        <div style="position:relative"><input class="form-input" id="ccp-new" type="password" placeholder="Min 6 characters" style="padding-right:44px"/>
+        <button type="button" onclick="togglePassVis('ccp-new','ccp-new-eye')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)" id="ccp-new-eye">👁</button></div>
+      </div>
+      <div class="form-group"><label>Confirm Password</label>
+        <div style="position:relative"><input class="form-input" id="ccp-con" type="password" placeholder="Re-enter new password" style="padding-right:44px"/>
+        <button type="button" onclick="togglePassVis('ccp-con','ccp-con-eye')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)" id="ccp-con-eye">👁</button></div>
+      </div>
+      <button class="btn-primary" onclick="saveClientPwd()">Update Password</button>
+    </div>
+  `;
+}
+function saveClientPwd(){
+  const db=gDB();const al=document.getElementById('ccp-alert');
+  const cur=document.getElementById('ccp-cur').value;
+  const nw=document.getElementById('ccp-new').value;
+  const con=document.getElementById('ccp-con').value;
+  const u=db.users.find(x=>x.id===CU.id);
+  if(!u||u.password!==cur){al.innerHTML='<div class="alert alert-err">Current password is incorrect.</div>';return;}
+  if(nw.length<6){al.innerHTML='<div class="alert alert-err">New password must be at least 6 characters.</div>';return;}
+  if(nw!==con){al.innerHTML='<div class="alert alert-err">Passwords do not match.</div>';return;}
+  u.password=nw;CU.password=nw;sDB(db);
+  al.innerHTML='<div class="alert alert-ok">✓ Password updated.</div>';
+  ['ccp-cur','ccp-new','ccp-con'].forEach(id=>document.getElementById(id).value='');
+}
+
+
+function doShare(){if(navigator.share&&typeof navigator.share==="function"){navigator.share({title:"Khalorna Xpress",text:"Khalorna Xpress Fleet Management",url:location.href}).catch(()=>{});}else{const a=document.createElement("input");a.value=location.href;document.body.appendChild(a);a.select();document.execCommand("copy");document.body.removeChild(a);alert("Link copied to clipboard!");}}
+// ── GLOBAL ERROR HANDLER ──
+window.addEventListener('error',e=>{
+  console.error('KX uncaught:',e.message,e.filename,e.lineno);
+  const el=document.getElementById('gh-sync-toast')||document.createElement('div');
+  el.id='gh-sync-toast';el.style.cssText='position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#1B2E4A;border:1px solid #EF4444;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:600;z-index:9999;color:#F87171';
+  el.textContent='⚠ App error — tap here to reload';el.style.cursor='pointer';el.onclick=()=>location.reload();
+  document.body.appendChild(el);
+  return false;
+});
+window.addEventListener('unhandledrejection',e=>{console.warn('KX unhandled promise:',e.reason);});
+
 // ── INIT ──
 initDB();
+// Session restore on refresh
+(function restoreSession(){
+  try{
+    const sess=JSON.parse(sessionStorage.getItem('kx_session')||'null');
+    if(sess&&sess.uid){
+      const db=gDB();if(!db)return;
+      const u=db.users.find(x=>x.id===sess.uid);
+      if(u){CU=u;showScreen(u.role);return;}
+    }
+  }catch{}
+  // Pull latest from GitHub if configured (async, no block)
+  GH.pull().then(remote=>{
+    if(!remote)return;
+    const local=gDB();
+    if(!local)return;
+    // Only replace if remote nid is higher (more recent saves)
+    if((remote.nid||0)>(local.nid||0)){
+      localStorage.setItem('kx_v6',JSON.stringify(remote));
+      console.log('KX: restored from GitHub');
+    }
+  });
+})();
 // Check for invite token in URL on load
 (function checkInvite(){
   const hash=window.location.hash;
