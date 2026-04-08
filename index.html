@@ -91,7 +91,7 @@ button { padding:6px 10px; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
@@ -111,39 +111,75 @@ window.switchTab = function(tab) {
   document.getElementById("tab-"+tab).classList.add("active");
 }
 
+// 🔥 MAKE FUNCTIONS GLOBAL (IMPORTANT FIX)
+window.addTrip = async function() {
+  const destinationVal = document.getElementById("destination").value;
+  const amountVal = Number(document.getElementById("amount").value);
+  const fuelCostVal = Number(document.getElementById("fuelCost").value || 0);
+  const driverPayVal = Number(document.getElementById("driverPay").value || 0);
+  const driverVal = document.getElementById("driverName").value || "Unassigned";
+  const customerVal = document.getElementById("customerName").value || "Unknown";
+
+  if (!destinationVal || !amountVal) {
+    alert("Enter destination and revenue");
+    return;
+  }
+
+  const profit = amountVal - (fuelCostVal + driverPayVal);
+
+  await addDoc(collection(db, "trips"), {
+    destination: destinationVal,
+    amount: amountVal,
+    fuelCost: fuelCostVal,
+    driverPay: driverPayVal,
+    driver: driverVal,
+    customer: customerVal,
+    profit,
+    status: "pending",
+    createdAt: Date.now()
+  });
+};
+
+window.markDone = async function(id) {
+  await updateDoc(doc(db, "trips", id), { status: "completed" });
+};
+
 onSnapshot(collection(db, "trips"), (snapshot) => {
   trips = [];
-  snapshot.forEach(doc => trips.push(doc.data()));
+  snapshot.forEach(doc => trips.push({ id: doc.id, ...doc.data() }));
   render();
 });
 
-window.addTrip = async function() {
-  const destination = destination.value;
-  const amount = Number(amount.value);
-  const fuelCost = Number(fuelCost.value||0);
-  const driverPay = Number(driverPay.value||0);
-  const driver = driverName.value;
-  const customer = customerName.value;
-
-  const profit = amount - (fuelCost + driverPay);
-
-  await addDoc(collection(db, "trips"), {
-    destination, amount, fuelCost, driverPay, driver, customer, profit, createdAt: Date.now()
-  });
-}
-
 function render() {
-  let revenue=0, profit=0;
+  let revenue=0, profit=0, completed=0;
   let drivers={}, customers={}, monthly=0;
+
+  tripList.innerHTML="";
+  driverEarningsList.innerHTML="";
+  customerList.innerHTML="";
 
   trips.forEach(t=>{
     revenue+=t.amount||0;
     profit+=t.profit||0;
+    if(t.status==="completed") completed++;
 
     drivers[t.driver]=(drivers[t.driver]||0)+(t.driverPay||0);
     customers[t.customer]=(customers[t.customer]||0)+(t.amount||0);
 
     if(Date.now()-t.createdAt<2592000000) monthly+=t.profit||0;
+
+    const li=document.createElement("li");
+    li.innerHTML=`${t.destination} | ${t.driver} | Profit: ${t.profit}
+      <button onclick="markDone('${t.id}')">Done</button>`;
+    tripList.appendChild(li);
+  });
+
+  Object.keys(drivers).forEach(d=>{
+    driverEarningsList.innerHTML+=`<li>${d}: JMD ${drivers[d]}</li>`;
+  });
+
+  Object.keys(customers).forEach(c=>{
+    customerList.innerHTML+=`<li>${c}: JMD ${customers[c]}</li>`;
   });
 
   totalTrips.textContent=trips.length;
@@ -151,18 +187,8 @@ function render() {
   totalProfit.textContent=profit;
   totalRevenue2.textContent=revenue;
   totalProfit2.textContent=profit;
-
-  driverEarningsList.innerHTML="";
-  Object.keys(drivers).forEach(d=>{
-    driverEarningsList.innerHTML+=`<li>${d}: ${drivers[d]}</li>`;
-  });
-
-  customerList.innerHTML="";
-  Object.keys(customers).forEach(c=>{
-    customerList.innerHTML+=`<li>${c}: ${customers[c]}</li>`;
-  });
-
-  monthlyReport.textContent=`Monthly Profit: ${monthly}`;
+  completedTrips.textContent=completed;
+  monthlyReport.textContent=`Monthly Profit: JMD ${monthly}`;
 }
 
 </script>
