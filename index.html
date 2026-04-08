@@ -12,7 +12,7 @@ body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
 .active { background:#2e4a9e !important; }
 .container { padding:20px; }
 .card { background:#132040; padding:15px; margin-bottom:10px; border-radius:10px; }
-input { padding:6px; margin:4px 0; }
+input, select { padding:6px; margin:4px 0; }
 button { padding:6px 10px; }
 ul { padding-left: 18px; }
 li { margin-bottom: 6px; }
@@ -22,11 +22,11 @@ li { margin-bottom: 6px; }
 
 <body>
 
-<!-- NAVIGATION -->
 <div class="nav">
   <button onclick="switchTab('dashboard')" id="tab-dashboard" class="active">Dashboard</button>
   <button onclick="switchTab('trips')" id="tab-trips">Trips</button>
   <button onclick="switchTab('earnings')" id="tab-earnings">Earnings</button>
+  <button onclick="switchTab('drivers')" id="tab-drivers">Drivers</button>
 </div>
 
 <div class="container">
@@ -48,8 +48,8 @@ li { margin-bottom: 6px; }
       <input id="amount" type="number" placeholder="Revenue (JMD)">
       <input id="fuelCost" type="number" placeholder="Fuel Cost (JMD)">
       <input id="driverPay" type="number" placeholder="Driver Pay (JMD)">
+      <input id="driverName" placeholder="Driver Name">
       <button onclick="addTrip()">Add Trip</button>
-      <div class="small">Profit is auto-calculated as Revenue - (Fuel + Driver Pay)</div>
     </div>
 
     <div class="card">
@@ -67,16 +67,22 @@ li { margin-bottom: 6px; }
     </div>
   </div>
 
+  <!-- DRIVER DASHBOARD -->
+  <div id="drivers" style="display:none;">
+    <div class="card">
+      <h3>Driver Earnings</h3>
+      <ul id="driverEarningsList"></ul>
+    </div>
+  </div>
+
 </div>
 
 <script type="module">
 
-// 🔹 Firebase Imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// 🔹 Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
   authDomain: "khalorna-xpress-app.firebaseapp.com",
@@ -89,12 +95,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 🔹 STATE
 let trips = [];
 
-// 🔹 TAB SWITCHING
 window.switchTab = function(tab) {
-  ["dashboard","trips","earnings"].forEach(t => {
+  ["dashboard","trips","earnings","drivers"].forEach(t => {
     document.getElementById(t).style.display = "none";
     document.getElementById("tab-"+t).classList.remove("active");
   });
@@ -103,7 +107,6 @@ window.switchTab = function(tab) {
   document.getElementById("tab-"+tab).classList.add("active");
 }
 
-// 🔹 REAL-TIME DATA
 onSnapshot(collection(db, "trips"), (snapshot) => {
   trips = [];
   snapshot.forEach(docSnap => {
@@ -112,12 +115,12 @@ onSnapshot(collection(db, "trips"), (snapshot) => {
   renderUI();
 });
 
-// 🔹 ADD TRIP (WITH EARNINGS MODEL)
 window.addTrip = async function () {
   const destination = document.getElementById("destination").value;
   const amount = Number(document.getElementById("amount").value);
   const fuelCost = Number(document.getElementById("fuelCost").value || 0);
   const driverPay = Number(document.getElementById("driverPay").value || 0);
+  const driver = document.getElementById("driverName").value || "Unassigned";
 
   if (!destination || !amount) {
     alert("Enter destination and revenue amount");
@@ -131,37 +134,35 @@ window.addTrip = async function () {
     amount,
     fuelCost,
     driverPay,
+    driver,
     profit,
     status: "pending",
     createdAt: Date.now()
   });
-
-  document.getElementById("destination").value = "";
-  document.getElementById("amount").value = "";
-  document.getElementById("fuelCost").value = "";
-  document.getElementById("driverPay").value = "";
 };
 
-// 🔹 UPDATE STATUS
 window.markDone = async function(id) {
   await updateDoc(doc(db, "trips", id), {
     status: "completed"
   });
 };
 
-// 🔹 RENDER UI (DASHBOARD + TRIPS + EARNINGS)
 function renderUI() {
   const list = document.getElementById("tripList");
   const totalTripsEl = document.getElementById("totalTrips");
   const completedTripsEl = document.getElementById("completedTrips");
   const revenueEl = document.getElementById("totalRevenue");
   const profitEl = document.getElementById("totalProfit");
+  const driverList = document.getElementById("driverEarningsList");
 
   list.innerHTML = "";
+  driverList.innerHTML = "";
 
   let completedCount = 0;
   let totalRevenue = 0;
   let totalProfit = 0;
+
+  const driverTotals = {};
 
   trips.forEach(trip => {
     if (trip.status === "completed") completedCount++;
@@ -169,20 +170,32 @@ function renderUI() {
     totalRevenue += Number(trip.amount || 0);
     totalProfit += Number(trip.profit || 0);
 
+    // Driver aggregation
+    if (!driverTotals[trip.driver]) {
+      driverTotals[trip.driver] = 0;
+    }
+    driverTotals[trip.driver] += Number(trip.driverPay || 0);
+
     const li = document.createElement("li");
     li.innerHTML = `
-      <strong>${trip.destination || ""}</strong>
+      <strong>${trip.destination}</strong>
       <div class="small">
-        Revenue: JMD ${trip.amount || 0} |
-        Fuel: JMD ${trip.fuelCost || 0} |
-        Driver: JMD ${trip.driverPay || 0} |
-        Profit: JMD ${trip.profit || 0} |
-        Status: ${trip.status || "pending"}
+        Driver: ${trip.driver} |
+        Revenue: ${trip.amount} |
+        Profit: ${trip.profit} |
+        Status: ${trip.status}
       </div>
-      <button onclick="markDone('${trip.id}')">Mark Done</button>
+      <button onclick="markDone('${trip.id}')">Done</button>
     `;
 
     list.appendChild(li);
+  });
+
+  // Render driver earnings
+  Object.keys(driverTotals).forEach(driver => {
+    const li = document.createElement("li");
+    li.textContent = `${driver}: JMD ${driverTotals[driver]}`;
+    driverList.appendChild(li);
   });
 
   totalTripsEl.textContent = trips.length;
