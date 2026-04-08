@@ -3,40 +3,98 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Khalorna Xpress Dashboard</title>
+<title>Khalorna Xpress App</title>
+
 <style>
-body { font-family: Arial; margin:0; padding:20px; background:#0A1628; color:#fff; }
-.card { background:#132040; padding:15px; margin-bottom:10px; border-radius:10px; }
-button { padding:8px 12px; margin-top:5px; }
+body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
+
+.nav {
+  display:flex;
+  background:#132040;
+  padding:10px;
+  gap:10px;
+}
+.nav button {
+  background:#1c2c50;
+  color:white;
+  border:none;
+  padding:10px;
+  cursor:pointer;
+}
+
+.active {
+  background:#2e4a9e !important;
+}
+
+.container {
+  padding:20px;
+}
+
+.card {
+  background:#132040;
+  padding:15px;
+  margin-bottom:10px;
+  border-radius:10px;
+}
+
 input { padding:6px; margin:4px 0; }
+button { padding:6px 10px; }
 </style>
 </head>
+
 <body>
 
-<h2>🚚 Khalorna Xpress Dashboard</h2>
-
-<div class="card">
-  <h3>Summary</h3>
-  <p>Total Trips: <span id="totalTrips">0</span></p>
-  <p>Completed Trips: <span id="completedTrips">0</span></p>
+<!-- NAVIGATION -->
+<div class="nav">
+  <button onclick="switchTab('dashboard')" id="tab-dashboard" class="active">Dashboard</button>
+  <button onclick="switchTab('trips')" id="tab-trips">Trips</button>
+  <button onclick="switchTab('earnings')" id="tab-earnings">Earnings</button>
 </div>
 
-<div class="card">
-  <h3>Add Trip</h3>
-  <input id="destination" placeholder="Destination" />
-  <input id="amount" placeholder="Amount" type="number" />
-  <button onclick="addTrip()">Add Trip</button>
-</div>
+<div class="container">
 
-<div class="card">
-  <h3>Trips</h3>
-  <ul id="tripList"></ul>
+  <!-- DASHBOARD -->
+  <div id="dashboard">
+    <div class="card">
+      <h3>Summary</h3>
+      <p>Total Trips: <span id="totalTrips">0</span></p>
+      <p>Completed Trips: <span id="completedTrips">0</span></p>
+    </div>
+  </div>
+
+  <!-- TRIPS -->
+  <div id="trips" style="display:none;">
+    <div class="card">
+      <h3>Add Trip</h3>
+      <input id="destination" placeholder="Destination">
+      <input id="amount" type="number" placeholder="Amount">
+      <button onclick="addTrip()">Add Trip</button>
+    </div>
+
+    <div class="card">
+      <h3>Trips List</h3>
+      <ul id="tripList"></ul>
+    </div>
+  </div>
+
+  <!-- EARNINGS -->
+  <div id="earnings" style="display:none;">
+    <div class="card">
+      <h3>Earnings</h3>
+      <p>Total Revenue: JMD <span id="totalRevenue">0</span></p>
+    </div>
+  </div>
+
 </div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// 🔹 Firebase Imports
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// 🔹 Config
 const firebaseConfig = {
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
   authDomain: "khalorna-xpress-app.firebaseapp.com",
@@ -49,18 +107,31 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// 🔹 STATE
 let trips = [];
 
-// REAL-TIME SYNC
+// 🔹 TAB SWITCHING
+window.switchTab = function(tab) {
+  ["dashboard","trips","earnings"].forEach(t => {
+    document.getElementById(t).style.display = "none";
+    document.getElementById("tab-"+t).classList.remove("active");
+  });
+
+  document.getElementById(tab).style.display = "block";
+  document.getElementById("tab-"+tab).classList.add("active");
+}
+
+// 🔹 REAL-TIME DATA
 onSnapshot(collection(db, "trips"), (snapshot) => {
   trips = [];
   snapshot.forEach(docSnap => {
     trips.push({ id: docSnap.id, ...docSnap.data() });
   });
-  renderTrips();
+
+  renderUI();
 });
 
-// ADD TRIP
+// 🔹 ADD TRIP
 window.addTrip = async function () {
   const destination = document.getElementById("destination").value;
   const amount = Number(document.getElementById("amount").value);
@@ -81,35 +152,42 @@ window.addTrip = async function () {
   document.getElementById("amount").value = "";
 };
 
-// UPDATE STATUS
-window.markDone = async function (id) {
+// 🔹 UPDATE
+window.markDone = async function(id) {
   await updateDoc(doc(db, "trips", id), {
     status: "completed"
   });
 };
 
-// RENDER
-function renderTrips() {
+// 🔹 RENDER
+function renderUI() {
   const list = document.getElementById("tripList");
   const total = document.getElementById("totalTrips");
   const completed = document.getElementById("completedTrips");
+  const revenue = document.getElementById("totalRevenue");
 
   list.innerHTML = "";
+
   let completedCount = 0;
+  let totalRevenue = 0;
 
   trips.forEach(trip => {
     if (trip.status === "completed") completedCount++;
+    if (trip.amount) totalRevenue += trip.amount;
 
     const li = document.createElement("li");
-    li.innerHTML = `${trip.destination || ""} - JMD ${trip.amount || 0} - ${trip.status || "pending"}
-      <button onclick="markDone('${trip.id}')">Done</button>`;
-
+    li.innerHTML = `
+      ${trip.destination} - JMD ${trip.amount} - ${trip.status}
+      <button onclick="markDone('${trip.id}')">Done</button>
+    `;
     list.appendChild(li);
   });
 
   total.textContent = trips.length;
   completed.textContent = completedCount;
+  revenue.textContent = totalRevenue;
 }
+
 </script>
 
 </body>
