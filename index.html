@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Khalorna Xpress (Archive Analytics)</title>
+<title>Khalorna Xpress (Fixed Archive Flow)</title>
 
 <style>
 body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
@@ -26,7 +26,6 @@ button { padding:6px 10px; margin-top:5px; cursor:pointer; }
 
 <div class="container">
 
-<!-- DASHBOARD -->
 <div id="dashboard">
   <div class="card">
     <h3>Summary</h3>
@@ -35,7 +34,6 @@ button { padding:6px 10px; margin-top:5px; cursor:pointer; }
   </div>
 </div>
 
-<!-- TRIPS -->
 <div id="trips" style="display:none;">
   <div class="card">
     <h3>Add Trip</h3>
@@ -51,7 +49,6 @@ button { padding:6px 10px; margin-top:5px; cursor:pointer; }
   </div>
 </div>
 
-<!-- ARCHIVE -->
 <div id="archive" style="display:none;">
   <div class="card">
     <h3>Archived Trips</h3>
@@ -77,7 +74,6 @@ import {
   getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
   authDomain: "khalorna-xpress-app.firebaseapp.com",
@@ -90,7 +86,6 @@ const db = getFirestore(app);
 let trips = [];
 let archivedTrips = [];
 
-/* NAVIGATION */
 window.switchTab = function(tab){
   document.getElementById("dashboard").style.display="none";
   document.getElementById("trips").style.display="none";
@@ -98,7 +93,6 @@ window.switchTab = function(tab){
   document.getElementById(tab).style.display="block";
 };
 
-/* CREATE TRIP */
 window.createTrip = async function(){
   const destination = document.getElementById("destination").value;
   const amount = Number(document.getElementById("amount").value);
@@ -114,43 +108,52 @@ window.createTrip = async function(){
   });
 };
 
-/* UPDATE STATUS */
-window.updateStatus = async function(id,status){
-  await updateDoc(doc(db,"trips",id),{ status });
+window.updateStatus = async function(id, status){
+  console.log("Updating status:", id, status);
+
+  const ref = doc(db, "trips", id);
+  await updateDoc(ref, { status });
 
   if(status === "paid"){
-    archiveTrip(id);
+    await archiveTrip(id);
   }
 };
 
-/* ARCHIVE */
 async function archiveTrip(id){
-  const trip = trips.find(t=>t.id===id);
+  const trip = trips.find(t => t.id === id);
 
-  if(!trip) return;
+  if(!trip){
+    console.log("Trip not found");
+    return;
+  }
 
-  trip.archivedAt = Date.now();
-  trip.archivedBy = "system";
+  const archiveData = {
+    ...trip,
+    archivedAt: Date.now(),
+    archivedBy: "system"
+  };
 
-  await addDoc(collection(db,"archivedTrips"), trip);
-  await deleteDoc(doc(db,"trips",id));
+  try {
+    await addDoc(collection(db, "archivedTrips"), archiveData);
+    await deleteDoc(doc(db, "trips", id));
+    console.log("Archived successfully");
+  } catch(err){
+    console.error("Archive failed:", err);
+  }
 }
 
-/* LISTEN TRIPS */
 onSnapshot(collection(db,"trips"), snap=>{
   trips=[];
   snap.forEach(d=>trips.push({id:d.id,...d.data()}));
   renderTrips();
 });
 
-/* LISTEN ARCHIVE */
 onSnapshot(collection(db,"archivedTrips"), snap=>{
   archivedTrips=[];
   snap.forEach(d=>archivedTrips.push({id:d.id,...d.data()}));
   renderArchive();
 });
 
-/* RENDER TRIPS */
 function renderTrips(){
   let earnings=0;
   tripList.innerHTML="";
@@ -162,7 +165,6 @@ function renderTrips(){
 
     li.innerHTML=`
       <b>${t.destination}</b> - ${t.status}<br>
-      Driver: ${t.driver || "-"}<br>
       <button onclick="updateStatus('${t.id}','assigned')">Assign</button>
       <button onclick="updateStatus('${t.id}','in_progress')">Start</button>
       <button onclick="updateStatus('${t.id}','completed')">Complete</button>
@@ -176,9 +178,7 @@ function renderTrips(){
   totalEarnings.textContent=earnings;
 }
 
-/* RENDER ARCHIVE + ANALYTICS */
 function renderArchive(){
-
   archiveList.innerHTML="";
   monthlyRevenue.innerHTML="";
   driverPerformance.innerHTML="";
@@ -187,20 +187,14 @@ function renderArchive(){
   let driverData = {};
 
   archivedTrips.forEach(trip => {
-
     const li=document.createElement("li");
-
-    li.innerHTML=`
-      ${trip.destination} - JMD ${trip.amount}<br>
-      Driver: ${trip.driver || "-"}<hr>
-    `;
-
+    li.innerHTML=`${trip.destination} - JMD ${trip.amount}<hr>`;
     archiveList.appendChild(li);
 
     const date = new Date(trip.createdAt);
-    const monthKey = date.toLocaleString('default',{month:'short',year:'numeric'});
+    const key = date.toLocaleString('default',{month:'short',year:'numeric'});
 
-    monthlyData[monthKey]=(monthlyData[monthKey]||0)+trip.amount;
+    monthlyData[key]=(monthlyData[key]||0)+trip.amount;
     driverData[trip.driver]=(driverData[trip.driver]||0)+trip.amount;
   });
 
