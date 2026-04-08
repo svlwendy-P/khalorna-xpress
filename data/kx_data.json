@@ -639,7 +639,7 @@
       "id": "u1",
       "name": "Admin User",
       "username": "admin",
-      "password": "Khal2019",
+      "password": "admin123",
       "role": "admin",
       "phone": "876-559-3028"
     },
@@ -1605,5 +1605,15 @@
       }
     }
   ],
-  "trips": []
+  "trips": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ]
 }
