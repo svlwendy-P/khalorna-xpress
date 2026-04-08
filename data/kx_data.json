@@ -1,7 +1,7 @@
 {
   "v": 6,
   "nid": 200,
-  "updatedAt": "2026-04-08T15:45:50.183Z",
+  "updatedAt": "2026-04-08T15:46:13.869Z",
   "settings": {
     "ghSync": {
       "repo": "khalorna-xpress/Khalorna-xpress",
@@ -697,10 +697,10 @@
     {
       "id": "v2",
       "plate": "CP3535",
-      "model": "Mitsubishi Canter",
+      "model": "Isuzu elf",
       "tonnage": "7T",
-      "driverId": "u3",
-      "assistantId": null
+      "driverId": "u2",
+      "assistantId": "u4"
     }
   ],
   "contracts": [
