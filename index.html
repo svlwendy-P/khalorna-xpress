@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KX App (Firebase Live)</title>
-
+<title>Khalorna Xpress Dashboard</title>
 <style>
 body { font-family: Arial; margin:0; padding:20px; background:#0A1628; color:#fff; }
 .card { background:#132040; padding:15px; margin-bottom:10px; border-radius:10px; }
@@ -26,7 +25,7 @@ input { padding:6px; margin:4px 0; }
   <h3>Add Trip</h3>
   <input id="destination" placeholder="Destination" />
   <input id="amount" placeholder="Amount" type="number" />
-  <button onclick="createTrip()">Add Trip</button>
+  <button onclick="addTrip()">Add Trip</button>
 </div>
 
 <div class="card">
@@ -35,11 +34,9 @@ input { padding:6px; margin:4px 0; }
 </div>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// ✅ YOUR ACTUAL FIREBASE CONFIG (ALREADY INSERTED)
 const firebaseConfig = {
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
   authDomain: "khalorna-xpress-app.firebaseapp.com",
@@ -49,26 +46,22 @@ const firebaseConfig = {
   appId: "1:926316181174:web:b96a4a81269e7d7766d817"
 };
 
-// 🔌 Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 📊 App State
 let trips = [];
 
-// 📡 REAL-TIME LISTENER
-function listenToTrips() {
-  onSnapshot(collection(db, "trips"), (snapshot) => {
-    trips = [];
-    snapshot.forEach(docSnap => {
-      trips.push({ id: docSnap.id, ...docSnap.data() });
-    });
-    renderUI();
+// REAL-TIME SYNC
+onSnapshot(collection(db, "trips"), (snapshot) => {
+  trips = [];
+  snapshot.forEach(docSnap => {
+    trips.push({ id: docSnap.id, ...docSnap.data() });
   });
-}
+  renderTrips();
+});
 
-// ➕ ADD TRIP
-window.createTrip = async function () {
+// ADD TRIP
+window.addTrip = async function () {
   const destination = document.getElementById("destination").value;
   const amount = Number(document.getElementById("amount").value);
 
@@ -88,14 +81,15 @@ window.createTrip = async function () {
   document.getElementById("amount").value = "";
 };
 
-// ✏️ UPDATE TRIP
+// UPDATE STATUS
 window.markDone = async function (id) {
-  const ref = doc(db, "trips", id);
-  await updateDoc(ref, { status: "completed" });
+  await updateDoc(doc(db, "trips", id), {
+    status: "completed"
+  });
 };
 
-// 🎨 RENDER UI
-function renderUI() {
+// RENDER
+function renderTrips() {
   const list = document.getElementById("tripList");
   const total = document.getElementById("totalTrips");
   const completed = document.getElementById("completedTrips");
@@ -107,7 +101,7 @@ function renderUI() {
     if (trip.status === "completed") completedCount++;
 
     const li = document.createElement("li");
-    li.innerHTML = `${trip.destination} - JMD ${trip.amount} - ${trip.status}
+    li.innerHTML = `${trip.destination || ""} - JMD ${trip.amount || 0} - ${trip.status || "pending"}
       <button onclick="markDone('${trip.id}')">Done</button>`;
 
     list.appendChild(li);
@@ -116,10 +110,6 @@ function renderUI() {
   total.textContent = trips.length;
   completed.textContent = completedCount;
 }
-
-// 🚀 INIT APP
-listenToTrips();
-
 </script>
 
 </body>
