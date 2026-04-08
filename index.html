@@ -841,58 +841,158 @@ const GH={
   cfg(){
     try{
       const local=JSON.parse(localStorage.getItem('kx_ghconf')||'null');
-      // Also check db.settings for repo/branch/path (shared across devices via sync)
       const db=typeof gDB==='function'?gDB():null;
       const dbCfg=db&&db.settings&&db.settings.ghSync?db.settings.ghSync:{};
       if(!local&&!dbCfg.repo)return null;
-      return{token:local&&local.token||'',repo:local&&local.repo||dbCfg.repo||'',branch:local&&local.branch||dbCfg.branch||'main',path:local&&local.path||dbCfg.path||'data/kx_data.json'};
+      return{
+        token:(local&&local.token)||'',
+        repo:(local&&local.repo)||dbCfg.repo||'',
+        branch:(local&&local.branch)||dbCfg.branch||'main',
+        path:(local&&local.path)||dbCfg.path||'data/kx_data.json'
+      };
     }catch{return null;}
   },
   save(c){
     localStorage.setItem('kx_ghconf',JSON.stringify(c));
-    // Also store non-secret fields in db so other devices inherit repo/branch/path
     try{
       const db=gDB();if(db){
         if(!db.settings)db.settings={};
         db.settings.ghSync={repo:c.repo,branch:c.branch||'main',path:c.path||'data/kx_data.json'};
-        localStorage.setItem('kx_v6',JSON.stringify(db));// direct write to avoid GH push loop
+        localStorage.setItem('kx_v6',JSON.stringify(db));
       }
     }catch{}
   },
+  // ── Safe base64 encoder that handles full Unicode ──
+  _enc(str){
+    try{
+      // TextEncoder approach — works in all modern browsers
+      const bytes=new TextEncoder().encode(str);
+      let bin='';
+      bytes.forEach(b=>bin+=String.fromCharCode(b));
+      return btoa(bin);
+    }catch(e){
+      // Fallback: strip problematic chars and encode
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+  },
+  // ── Safe base64 decoder ──
+  _dec(b64){
+    try{
+      const bin=atob(b64.replace(/[\n\r]/g,''));
+      const bytes=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+      return new TextDecoder().decode(bytes);
+    }catch{
+      return decodeURIComponent(escape(atob(b64.replace(/[\n\r]/g,''))));
+    }
+  },
+  // ── Strip POD photos before push to stay under 1MB API limit ──
+  _strip(data){
+    try{
+      const d=JSON.parse(JSON.stringify(data));
+      (d.trips||[]).forEach(t=>{if(t.pod&&t.pod.photo)t.pod.photo='';});
+      return d;
+    }catch{return data;}
+  },
   _timer:null,
+  _retries:0,
   push(data){
     const c=GH.cfg();if(!c||!c.token||!c.repo)return;
     clearTimeout(GH._timer);
-    GH._timer=setTimeout(async()=>{
+    GH._timer=setTimeout(()=>GH._doPush(data,c,0),2500);
+    // Also try to push on page unload so tab-close doesn't lose data
+    window._ghPendingData=data;
+  },
+  async _doPush(data,c,attempt){
+    try{
+      const payload=GH._strip(data);
+      const content=GH._enc(JSON.stringify(payload,null,2));
+      // Check size — GitHub API hard limit is ~1MB encoded
+      if(content.length>900000){
+        GH._showStatus('⚠ Data too large for GitHub sync — use Export Backup instead','#F87171',8000);
+        return;
+      }
+      const url=`https://api.github.com/repos/${c.repo}/contents/${c.path}`;
+      const headers={'Authorization':'Bearer '+c.token,'Content-Type':'application/json','Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+      // Get current SHA (required for update; omit for first create)
+      let sha='';
       try{
-        const url=`https://api.github.com/repos/${c.repo}/contents/${c.path||'data/kx_data.json'}`;
-        const headers={'Authorization':'token '+c.token,'Content-Type':'application/json'};
-        let sha='';
-        try{const r=await fetch(url,{headers});if(r.ok){const j=await r.json();sha=j.sha||'';}}catch{}
-        const body={message:'KX data sync '+new Date().toISOString(),content:btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2)))),branch:c.branch||'main'};
-        if(sha)body.sha=sha;
-        const res=await fetch(url,{method:'PUT',headers,body:JSON.stringify(body)});
-        if(res.ok)GH._showStatus('✓ Synced to GitHub','#10B981');
-        else GH._showStatus('⚠ GitHub sync failed','#F87171');
-      }catch(e){console.warn('GH push:',e);}
-    },2500);
+        const r=await fetch(url,{headers});
+        if(r.ok){const j=await r.json();sha=j.sha||'';}
+        else if(r.status===404){sha='';} // File doesn't exist yet — first push
+        else if(r.status===401){GH._showStatus('⚠ GitHub: Invalid token — check Settings','#F87171',8000);return;}
+        else if(r.status===403){GH._showStatus('⚠ GitHub: Token missing repo permission','#F87171',8000);return;}
+      }catch(fetchErr){
+        if(attempt<2){setTimeout(()=>GH._doPush(data,c,attempt+1),3000);return;}
+        GH._showStatus('⚠ GitHub: Network error — will retry','#F59E0B');return;
+      }
+      const body={message:'KX sync '+(new Date().toISOString()),content,branch:c.branch||'main'};
+      if(sha)body.sha=sha;
+      const res=await fetch(url,{method:'PUT',headers,body:JSON.stringify(body)});
+      if(res.ok){
+        GH._showStatus('✓ Synced to GitHub','#10B981');
+        GH._retries=0;
+        window._ghPendingData=null;
+      } else if(res.status===409&&attempt<2){
+        // Conflict — SHA changed between read and write; re-fetch SHA and retry
+        setTimeout(()=>GH._doPush(data,c,attempt+1),1500);
+      } else if(res.status===422){
+        GH._showStatus('⚠ GitHub: File encoding error','#F87171',6000);
+      } else if(res.status===429){
+        GH._showStatus('⚠ GitHub: Rate limited — retrying in 60s','#F59E0B');
+        setTimeout(()=>GH._doPush(data,c,0),60000);
+      } else {
+        const errBody=await res.json().catch(()=>({}));
+        const msg=errBody.message||res.status;
+        GH._showStatus('⚠ GitHub sync failed: '+msg,'#F87171',8000);
+        console.warn('GH push failed',res.status,errBody);
+      }
+    }catch(e){
+      console.warn('GH push error:',e);
+      if(attempt<2)setTimeout(()=>GH._doPush(data,c,attempt+1),3000);
+      else GH._showStatus('⚠ GitHub sync error — check console','#F87171');
+    }
   },
   async pull(){
     const c=GH.cfg();if(!c||!c.token||!c.repo)return null;
     try{
-      const url=`https://api.github.com/repos/${c.repo}/contents/${c.path||'data/kx_data.json'}`;
-      const r=await fetch(url,{headers:{'Authorization':'token '+c.token}});
-      if(!r.ok)return null;
+      const url=`https://api.github.com/repos/${c.repo}/contents/${c.path}`;
+      const r=await fetch(url,{headers:{'Authorization':'Bearer '+c.token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}});
+      if(r.status===404)return null; // File not yet created
+      if(!r.ok){console.warn('GH pull failed',r.status);return null;}
       const j=await r.json();
-      const raw=decodeURIComponent(escape(atob(j.content.replace(/\n/g,''))));
+      if(!j.content)return null;
+      const raw=GH._dec(j.content);
       return JSON.parse(raw);
-    }catch(e){console.warn('GH pull:',e);return null;}
+    }catch(e){console.warn('GH pull error:',e);return null;}
   },
-  _showStatus(msg,color){
+  // ── Test connection and report detailed result ──
+  async test(){
+    const c=GH.cfg();if(!c||!c.token||!c.repo)return{ok:false,msg:'No config'};
+    try{
+      // Test token against the user API
+      const uRes=await fetch('https://api.github.com/user',{headers:{'Authorization':'Bearer '+c.token,'Accept':'application/vnd.github+json'}});
+      if(uRes.status===401)return{ok:false,msg:'Token is invalid or expired'};
+      if(!uRes.ok)return{ok:false,msg:'GitHub API error: '+uRes.status};
+      const u=await uRes.json();
+      // Test repo access
+      const rRes=await fetch(`https://api.github.com/repos/${c.repo}`,{headers:{'Authorization':'Bearer '+c.token,'Accept':'application/vnd.github+json'}});
+      if(rRes.status===404)return{ok:false,msg:`Repo "${c.repo}" not found — check owner/repo name`};
+      if(rRes.status===403)return{ok:false,msg:'Token does not have access to this repo'};
+      if(!rRes.ok)return{ok:false,msg:'Repo access error: '+rRes.status};
+      return{ok:true,msg:`Connected as @${u.login} — repo "${c.repo}" accessible`};
+    }catch(e){return{ok:false,msg:'Network error: '+e.message};}
+  },
+  _showStatus(msg,color,duration){
     let el=document.getElementById('gh-sync-toast');
-    if(!el){el=document.createElement('div');el.id='gh-sync-toast';el.style.cssText='position:fixed;top:60px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);border-radius:10px;padding:8px 16px;font-size:12px;font-weight:600;z-index:9999;transition:opacity .4s';document.body.appendChild(el);}
+    if(!el){
+      el=document.createElement('div');el.id='gh-sync-toast';
+      el.style.cssText='position:fixed;top:68px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);border-radius:10px;padding:9px 18px;font-size:12px;font-weight:600;z-index:9999;transition:opacity .5s;max-width:320px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+      document.body.appendChild(el);
+    }
     el.style.color=color;el.textContent=msg;el.style.opacity='1';
-    setTimeout(()=>el.style.opacity='0',3000);
+    clearTimeout(el._t);
+    el._t=setTimeout(()=>el.style.opacity='0',duration||3500);
   }
 };
 
@@ -3270,7 +3370,8 @@ function renderAdminSettings(){
       <div class="form-group"><label>Branch</label><input class="form-input" id="gh-branch" placeholder="main" value="${c.branch||dbGh.branch||'main'}"/></div>
       <div class="form-group"><label>File Path</label><input class="form-input" id="gh-path" placeholder="data/kx_data.json" value="${c.path||dbGh.path||'data/kx_data.json'}"/></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-primary" style="flex:2" onclick="saveGhConfig()">Save & Test Connection</button>
+        <button class="btn-primary" style="flex:2" onclick="saveGhConfig()">💾 Save & Test</button>
+        <button class="btn-sm btn-ghost" style="flex:1;padding:12px" onclick="testGhOnly()">🔌 Test Only</button>
         <button class="btn-sm btn-ghost" style="flex:1;padding:12px" onclick="syncFromGitHub()">⬇ Pull Now</button>
       </div>
     </div>
@@ -3309,11 +3410,30 @@ function saveGhConfig(){
   };
   if(!cfg.token||!cfg.repo){al.innerHTML='<div class="alert alert-err">Token and repo are required.</div>';return;}
   GH.save(cfg);
-  al.innerHTML='<div class="alert alert-ok">✓ Saved. Testing connection…</div>';
-  GH.push(gDB());
-  setTimeout(()=>{
-    if(al)al.innerHTML='<div class="alert alert-ok">✓ Saved. Repo/path will sync to all devices automatically. Token must be entered on each device once (stays local for security).</div>';
-  },3000);
+  al.innerHTML='<div class="alert alert-ok">Testing connection…</div>';
+  GH.test().then(result=>{
+    if(result.ok){
+      al.innerHTML=`<div class="alert alert-ok">✓ ${result.msg}</div>`;
+      GH.push(gDB());
+    } else {
+      al.innerHTML=`<div class="alert alert-err">❌ ${result.msg}</div>`;
+    }
+  });
+}
+async function testGhOnly(){
+  const al=document.getElementById('gh-config-alert');
+  // Save whatever is currently in the fields first
+  const cfg={
+    token:document.getElementById('gh-token').value.trim(),
+    repo:document.getElementById('gh-repo').value.trim(),
+    branch:document.getElementById('gh-branch').value.trim()||'main',
+    path:document.getElementById('gh-path').value.trim()||'data/kx_data.json'
+  };
+  if(!cfg.token||!cfg.repo){al.innerHTML='<div class="alert alert-err">Enter token and repo to test.</div>';return;}
+  GH.save(cfg);
+  al.innerHTML='<div class="alert alert-ok">Testing…</div>';
+  const r=await GH.test();
+  al.innerHTML=r.ok?`<div class="alert alert-ok">✓ ${r.msg}</div>`:`<div class="alert alert-err">❌ ${r.msg}</div>`;
 }
 async function syncFromGitHub(){
   const al=document.getElementById('gh-config-alert');
@@ -3412,7 +3532,35 @@ function saveClientPwd(){
 
 
 function doShare(){if(navigator.share&&typeof navigator.share==="function"){navigator.share({title:"Khalorna Xpress",text:"Khalorna Xpress Fleet Management",url:location.href}).catch(()=>{});}else{const a=document.createElement("input");a.value=location.href;document.body.appendChild(a);a.select();document.execCommand("copy");document.body.removeChild(a);alert("Link copied to clipboard!");}}
-// ── GLOBAL ERROR HANDLER ──
+// Flush pending GitHub push on tab close
+window.addEventListener('beforeunload',()=>{
+  if(window._ghPendingData){
+    const c=GH.cfg();if(!c||!c.token||!c.repo)return;
+    // Use sendBeacon as a best-effort fire-and-forget on page unload
+    try{
+      const payload=GH._strip(window._ghPendingData);
+      const content=GH._enc(JSON.stringify(payload,null,2));
+      // Can't await on beforeunload — store to sessionStorage as emergency backup
+      sessionStorage.setItem('kx_unsaved',JSON.stringify({data:window._ghPendingData,ts:Date.now()}));
+    }catch{}
+  }
+});
+// On next load, check for unsaved session data and merge
+(function checkUnsaved(){
+  try{
+    const unsaved=JSON.parse(sessionStorage.getItem('kx_unsaved')||'null');
+    if(!unsaved)return;
+    sessionStorage.removeItem('kx_unsaved');
+    const age=(Date.now()-unsaved.ts)/1000;
+    if(age<300&&unsaved.data){ // within 5 minutes
+      const local=gDB();
+      if(local&&(unsaved.data.nid||0)>(local.nid||0)){
+        localStorage.setItem('kx_v6',JSON.stringify(unsaved.data));
+        GH.push(unsaved.data);
+      }
+    }
+  }catch{}
+})();
 window.addEventListener('error',e=>{
   console.error('KX uncaught:',e.message,e.filename,e.lineno);
   const el=document.getElementById('gh-sync-toast')||document.createElement('div');
