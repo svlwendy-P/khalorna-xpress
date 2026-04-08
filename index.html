@@ -3,78 +3,64 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Khalorna Xpress System (Analytics Enabled)</title>
+<title>Khalorna Xpress (Phase 1 Upgrade)</title>
 
 <style>
 body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
 .nav { display:flex; background:#132040; padding:10px; gap:10px; }
-.nav button { background:#1c2c50; color:white; border:none; padding:10px; }
+.nav button { background:#1c2c50; color:white; border:none; padding:10px; cursor:pointer; }
 .container { padding:20px; }
 .card { background:#132040; padding:15px; margin-bottom:10px; border-radius:10px; }
-input { padding:6px; margin:4px 0; }
-.hidden { display:none; }
-canvas { background:white; border-radius:8px; }
+input { padding:6px; margin:4px 0; width:100%; }
+button { padding:6px 10px; margin-top:5px; cursor:pointer; }
+.status { font-size:12px; opacity:0.8; }
 </style>
 </head>
 
 <body>
 
-<div id="loginSection" class="container">
-  <div class="card">
-    <h3>Login</h3>
-    <input id="username" placeholder="Driver Name">
-    <button onclick="login()">Enter</button>
-  </div>
-</div>
-
-<div id="appSection" class="hidden">
-
 <div class="nav">
   <button onclick="switchTab('dashboard')">Dashboard</button>
   <button onclick="switchTab('trips')">Trips</button>
-  <button onclick="switchTab('analytics')">Analytics</button>
 </div>
 
 <div class="container">
 
 <div id="dashboard">
   <div class="card">
+    <h3>Summary</h3>
     <p>Total Trips: <span id="totalTrips">0</span></p>
-    <p>Total Profit: <span id="totalProfit">0</span></p>
+    <p>Total Earnings: JMD <span id="totalEarnings">0</span></p>
   </div>
 </div>
 
 <div id="trips" style="display:none;">
   <div class="card">
+    <h3>Add Trip</h3>
+
     <input id="destination" placeholder="Destination">
     <input id="amount" type="number" placeholder="Revenue">
-    <input id="fuelCost" type="number" placeholder="Fuel">
-    <input id="driverPay" type="number" placeholder="Driver Pay">
-    <button onclick="addTrip()">Add Trip</button>
-  </div>
-  <ul id="tripList"></ul>
-</div>
 
-<div id="analytics" style="display:none;">
+    <input id="driver" placeholder="Driver name">
+    <input id="assistant" placeholder="Assistant name">
+
+    <button id="addBtn" onclick="createTrip()">Add Trip</button>
+  </div>
+
   <div class="card">
-    <h3>Profit by Driver</h3>
-    <canvas id="driverChart"></canvas>
-  </div>
-  <div class="card">
-    <h3>Profit Trend</h3>
-    <canvas id="trendChart"></canvas>
+    <h3>Trips</h3>
+    <ul id="tripList"></ul>
   </div>
 </div>
 
 </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } 
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+/* 🔹 YOUR FIREBASE CONFIG (UNCHANGED) */
 const firebaseConfig = {
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
   authDomain: "khalorna-xpress-app.firebaseapp.com",
@@ -84,87 +70,105 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-let currentUser = null;
 let trips = [];
-let driverChart, trendChart;
 
-window.login = function(){
-  currentUser = { name: document.getElementById("username").value };
-  loginSection.style.display="none";
-  appSection.classList.remove("hidden");
-}
-
+/* 🔹 NAVIGATION */
 window.switchTab = function(tab){
-  document.querySelectorAll('.container > div').forEach(d=>d.style.display='none');
-  document.getElementById(tab).style.display='block';
-}
-
-window.addTrip = async function(){
-  const destination = document.getElementById("destination").value;
-  const amount = Number(document.getElementById("amount").value);
-  const fuel = Number(document.getElementById("fuelCost").value||0);
-  const pay = Number(document.getElementById("driverPay").value||0);
-
-  const profit = amount - (fuel + pay);
-
-  await addDoc(collection(db,"trips"),{
-    destination, amount, fuel, pay,
-    driver: currentUser.name,
-    profit,
-    createdAt: Date.now()
-  });
+  document.getElementById("dashboard").style.display = "none";
+  document.getElementById("trips").style.display = "none";
+  document.getElementById(tab).style.display = "block";
 };
 
-onSnapshot(collection(db,"trips"), snap=>{
-  trips=[];
-  snap.forEach(d=>trips.push(d.data()));
-  render();
-  drawCharts();
+/* 🔹 CREATE TRIP (UPGRADED) */
+window.createTrip = async function () {
+
+  const destination = document.getElementById("destination").value;
+  const amount = Number(document.getElementById("amount").value);
+  const driver = document.getElementById("driver").value;
+  const assistant = document.getElementById("assistant").value;
+
+  if (!destination || !amount) {
+    alert("Destination and Revenue required");
+    return;
+  }
+
+  const btn = document.getElementById("addBtn");
+  btn.disabled = true;
+
+  try {
+    await addDoc(collection(db, "trips"), {
+      destination,
+      amount,
+      driver,
+      assistant,
+      status: "pending",
+      driverPay: amount * 0.2,
+      assistantPay: amount * 0.1,
+      createdAt: Date.now()
+    });
+
+    /* Clear inputs */
+    destination.value = "";
+    amount.value = "";
+    driver.value = "";
+    assistant.value = "";
+
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+/* 🔹 STATUS UPDATE */
+window.updateStatus = async function(id, status){
+  await updateDoc(doc(db,"trips",id), { status });
+};
+
+/* 🔹 WHATSAPP NOTIFY */
+window.notifyDriver = function(trip){
+  const msg = `Trip Assigned\n${trip.destination}\nAmount: ${trip.amount}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+};
+
+/* 🔹 REAL-TIME DATA */
+onSnapshot(collection(db,"trips"), snapshot => {
+  trips = [];
+  snapshot.forEach(d => trips.push({ id:d.id, ...d.data() }));
+  renderUI();
 });
 
-function render(){
-  let total=0;
-  tripList.innerHTML="";
+/* 🔹 RENDER */
+function renderUI(){
 
-  trips.forEach(t=>{
-    total+=t.profit;
-    const li=document.createElement("li");
-    li.textContent=`${t.destination} | ${t.profit}`;
-    tripList.appendChild(li);
+  const list = document.getElementById("tripList");
+  list.innerHTML = "";
+
+  let totalEarnings = 0;
+
+  trips.forEach(trip => {
+
+    if(trip.status === "completed"){
+      totalEarnings += trip.amount;
+    }
+
+    const li = document.createElement("li");
+
+    li.innerHTML = `
+      <b>${trip.destination}</b> - JMD ${trip.amount}<br>
+      Status: ${trip.status}<br>
+      Driver: ${trip.driver || "-"}<br>
+
+      <button onclick="updateStatus('${trip.id}','assigned')">Assign</button>
+      <button onclick="updateStatus('${trip.id}','in_progress')">Start</button>
+      <button onclick="updateStatus('${trip.id}','completed')">Complete</button>
+      <button onclick="updateStatus('${trip.id}','paid')">Paid</button>
+      <button onclick='notifyDriver(${JSON.stringify(trip)})'>Notify</button>
+    `;
+
+    list.appendChild(li);
   });
 
-  totalTrips.textContent=trips.length;
-  totalProfit.textContent=total;
-}
-
-function drawCharts(){
-  const driverTotals = {};
-  const trendData = {};
-
-  trips.forEach(t=>{
-    driverTotals[t.driver]=(driverTotals[t.driver]||0)+t.profit;
-
-    const day = new Date(t.createdAt).toLocaleDateString();
-    trendData[day]=(trendData[day]||0)+t.profit;
-  });
-
-  const driverLabels = Object.keys(driverTotals);
-  const driverValues = Object.values(driverTotals);
-
-  if(driverChart) driverChart.destroy();
-  driverChart = new Chart(document.getElementById("driverChart"),{
-    type:'bar',
-    data:{ labels:driverLabels, datasets:[{ label:'Profit', data:driverValues }] }
-  });
-
-  const trendLabels = Object.keys(trendData);
-  const trendValues = Object.values(trendData);
-
-  if(trendChart) trendChart.destroy();
-  trendChart = new Chart(document.getElementById("trendChart"),{
-    type:'line',
-    data:{ labels:trendLabels, datasets:[{ label:'Daily Profit', data:trendValues }] }
-  });
+  document.getElementById("totalTrips").textContent = trips.length;
+  document.getElementById("totalEarnings").textContent = totalEarnings;
 }
 
 </script>
