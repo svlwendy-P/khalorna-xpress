@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Khalorna Xpress (Phase 1 Upgrade)</title>
+<title>Khalorna Xpress (Phase 2)</title>
 
 <style>
 body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
@@ -13,7 +13,6 @@ body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
 .card { background:#132040; padding:15px; margin-bottom:10px; border-radius:10px; }
 input { padding:6px; margin:4px 0; width:100%; }
 button { padding:6px 10px; margin-top:5px; cursor:pointer; }
-.status { font-size:12px; opacity:0.8; }
 </style>
 </head>
 
@@ -30,25 +29,26 @@ button { padding:6px 10px; margin-top:5px; cursor:pointer; }
   <div class="card">
     <h3>Summary</h3>
     <p>Total Trips: <span id="totalTrips">0</span></p>
+    <p>Completed: <span id="completedTrips">0</span></p>
+    <p>Paid: <span id="paidTrips">0</span></p>
     <p>Total Earnings: JMD <span id="totalEarnings">0</span></p>
+
+    <button onclick="exportData()">Export Backup</button>
+    <input type="file" onchange="importData(event)">
   </div>
 </div>
 
 <div id="trips" style="display:none;">
   <div class="card">
     <h3>Add Trip</h3>
-
     <input id="destination" placeholder="Destination">
     <input id="amount" type="number" placeholder="Revenue">
-
-    <input id="driver" placeholder="Driver name">
-    <input id="assistant" placeholder="Assistant name">
-
-    <button id="addBtn" onclick="createTrip()">Add Trip</button>
+    <input id="driver" placeholder="Driver">
+    <input id="assistant" placeholder="Assistant">
+    <button onclick="createTrip()">Add Trip</button>
   </div>
 
   <div class="card">
-    <h3>Trips</h3>
     <ul id="tripList"></ul>
   </div>
 </div>
@@ -57,10 +57,13 @@ button { padding:6px 10px; margin-top:5px; cursor:pointer; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } 
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { 
+  getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* 🔹 YOUR FIREBASE CONFIG (UNCHANGED) */
+import { enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* 🔹 CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
   authDomain: "khalorna-xpress-app.firebaseapp.com",
@@ -70,105 +73,111 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+/* 🔹 OFFLINE MODE */
+enableIndexedDbPersistence(db).catch(() => {
+  console.log("Offline failed");
+});
+
 let trips = [];
 
-/* 🔹 NAVIGATION */
+/* NAV */
 window.switchTab = function(tab){
-  document.getElementById("dashboard").style.display = "none";
-  document.getElementById("trips").style.display = "none";
-  document.getElementById(tab).style.display = "block";
+  document.getElementById("dashboard").style.display="none";
+  document.getElementById("trips").style.display="none";
+  document.getElementById(tab).style.display="block";
 };
 
-/* 🔹 CREATE TRIP (UPGRADED) */
-window.createTrip = async function () {
-
+/* CREATE */
+window.createTrip = async function(){
   const destination = document.getElementById("destination").value;
   const amount = Number(document.getElementById("amount").value);
   const driver = document.getElementById("driver").value;
   const assistant = document.getElementById("assistant").value;
 
-  if (!destination || !amount) {
-    alert("Destination and Revenue required");
-    return;
-  }
+  await addDoc(collection(db,"trips"),{
+    destination, amount, driver, assistant,
+    status:"pending",
+    driverPay: amount*0.2,
+    assistantPay: amount*0.1,
+    createdAt: Date.now()
+  });
+};
 
-  const btn = document.getElementById("addBtn");
-  btn.disabled = true;
+/* STATUS */
+window.updateStatus = async function(id,status){
+  await updateDoc(doc(db,"trips",id),{ status });
 
-  try {
-    await addDoc(collection(db, "trips"), {
-      destination,
-      amount,
-      driver,
-      assistant,
-      status: "pending",
-      driverPay: amount * 0.2,
-      assistantPay: amount * 0.1,
-      createdAt: Date.now()
-    });
-
-    /* Clear inputs */
-    destination.value = "";
-    amount.value = "";
-    driver.value = "";
-    assistant.value = "";
-
-  } finally {
-    btn.disabled = false;
+  if(status === "paid"){
+    archiveTrip(id);
   }
 };
 
-/* 🔹 STATUS UPDATE */
-window.updateStatus = async function(id, status){
-  await updateDoc(doc(db,"trips",id), { status });
+/* ARCHIVE */
+async function archiveTrip(id){
+  const trip = trips.find(t=>t.id===id);
+  await addDoc(collection(db,"archivedTrips"), trip);
+  await deleteDoc(doc(db,"trips",id));
+}
+
+/* EXPORT */
+window.exportData = function(){
+  const blob = new Blob([JSON.stringify(trips,null,2)]);
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "backup.json";
+  a.click();
 };
 
-/* 🔹 WHATSAPP NOTIFY */
-window.notifyDriver = function(trip){
-  const msg = `Trip Assigned\n${trip.destination}\nAmount: ${trip.amount}`;
-  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+/* IMPORT */
+window.importData = function(e){
+  const file = e.target.files[0];
+  const reader = new FileReader();
+
+  reader.onload = async function(){
+    const data = JSON.parse(reader.result);
+    for(const t of data){
+      await addDoc(collection(db,"trips"), t);
+    }
+  };
+
+  reader.readAsText(file);
 };
 
-/* 🔹 REAL-TIME DATA */
-onSnapshot(collection(db,"trips"), snapshot => {
-  trips = [];
-  snapshot.forEach(d => trips.push({ id:d.id, ...d.data() }));
-  renderUI();
+/* LISTEN */
+onSnapshot(collection(db,"trips"), snap=>{
+  trips=[];
+  snap.forEach(d=>trips.push({id:d.id,...d.data()}));
+  render();
 });
 
-/* 🔹 RENDER */
-function renderUI(){
+/* RENDER */
+function render(){
+  let completed=0, paid=0, earnings=0;
 
-  const list = document.getElementById("tripList");
-  list.innerHTML = "";
+  tripList.innerHTML="";
 
-  let totalEarnings = 0;
+  trips.forEach(t=>{
+    if(t.status==="completed") earnings+=t.amount;
+    if(t.status==="completed") completed++;
+    if(t.status==="paid") paid++;
 
-  trips.forEach(trip => {
+    const li=document.createElement("li");
 
-    if(trip.status === "completed"){
-      totalEarnings += trip.amount;
-    }
-
-    const li = document.createElement("li");
-
-    li.innerHTML = `
-      <b>${trip.destination}</b> - JMD ${trip.amount}<br>
-      Status: ${trip.status}<br>
-      Driver: ${trip.driver || "-"}<br>
-
-      <button onclick="updateStatus('${trip.id}','assigned')">Assign</button>
-      <button onclick="updateStatus('${trip.id}','in_progress')">Start</button>
-      <button onclick="updateStatus('${trip.id}','completed')">Complete</button>
-      <button onclick="updateStatus('${trip.id}','paid')">Paid</button>
-      <button onclick='notifyDriver(${JSON.stringify(trip)})'>Notify</button>
+    li.innerHTML=`
+      ${t.destination} - ${t.status}<br>
+      <button onclick="updateStatus('${t.id}','assigned')">Assign</button>
+      <button onclick="updateStatus('${t.id}','in_progress')">Start</button>
+      <button onclick="updateStatus('${t.id}','completed')">Complete</button>
+      <button onclick="updateStatus('${t.id}','paid')">Paid</button>
     `;
 
-    list.appendChild(li);
+    tripList.appendChild(li);
   });
 
-  document.getElementById("totalTrips").textContent = trips.length;
-  document.getElementById("totalEarnings").textContent = totalEarnings;
+  totalTrips.textContent=trips.length;
+  completedTrips.textContent=completed;
+  paidTrips.textContent=paid;
+  totalEarnings.textContent=earnings;
 }
 
 </script>
