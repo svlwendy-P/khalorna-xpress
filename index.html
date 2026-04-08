@@ -7,38 +7,16 @@
 
 <style>
 body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
-
-.nav {
-  display:flex;
-  background:#132040;
-  padding:10px;
-  gap:10px;
-}
-.nav button {
-  background:#1c2c50;
-  color:white;
-  border:none;
-  padding:10px;
-  cursor:pointer;
-}
-
-.active {
-  background:#2e4a9e !important;
-}
-
-.container {
-  padding:20px;
-}
-
-.card {
-  background:#132040;
-  padding:15px;
-  margin-bottom:10px;
-  border-radius:10px;
-}
-
+.nav { display:flex; background:#132040; padding:10px; gap:10px; }
+.nav button { background:#1c2c50; color:white; border:none; padding:10px; cursor:pointer; }
+.active { background:#2e4a9e !important; }
+.container { padding:20px; }
+.card { background:#132040; padding:15px; margin-bottom:10px; border-radius:10px; }
 input { padding:6px; margin:4px 0; }
 button { padding:6px 10px; }
+ul { padding-left: 18px; }
+li { margin-bottom: 6px; }
+.small { opacity: 0.8; font-size: 12px; }
 </style>
 </head>
 
@@ -67,8 +45,11 @@ button { padding:6px 10px; }
     <div class="card">
       <h3>Add Trip</h3>
       <input id="destination" placeholder="Destination">
-      <input id="amount" type="number" placeholder="Amount">
+      <input id="amount" type="number" placeholder="Revenue (JMD)">
+      <input id="fuelCost" type="number" placeholder="Fuel Cost (JMD)">
+      <input id="driverPay" type="number" placeholder="Driver Pay (JMD)">
       <button onclick="addTrip()">Add Trip</button>
+      <div class="small">Profit is auto-calculated as Revenue - (Fuel + Driver Pay)</div>
     </div>
 
     <div class="card">
@@ -80,8 +61,9 @@ button { padding:6px 10px; }
   <!-- EARNINGS -->
   <div id="earnings" style="display:none;">
     <div class="card">
-      <h3>Earnings</h3>
+      <h3>Earnings Summary</h3>
       <p>Total Revenue: JMD <span id="totalRevenue">0</span></p>
+      <p>Total Profit: JMD <span id="totalProfit">0</span></p>
     </div>
   </div>
 
@@ -94,7 +76,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } 
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// 🔹 Config
+// 🔹 Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
   authDomain: "khalorna-xpress-app.firebaseapp.com",
@@ -127,65 +109,86 @@ onSnapshot(collection(db, "trips"), (snapshot) => {
   snapshot.forEach(docSnap => {
     trips.push({ id: docSnap.id, ...docSnap.data() });
   });
-
   renderUI();
 });
 
-// 🔹 ADD TRIP
+// 🔹 ADD TRIP (WITH EARNINGS MODEL)
 window.addTrip = async function () {
   const destination = document.getElementById("destination").value;
   const amount = Number(document.getElementById("amount").value);
+  const fuelCost = Number(document.getElementById("fuelCost").value || 0);
+  const driverPay = Number(document.getElementById("driverPay").value || 0);
 
   if (!destination || !amount) {
-    alert("Enter destination and amount");
+    alert("Enter destination and revenue amount");
     return;
   }
+
+  const profit = amount - (fuelCost + driverPay);
 
   await addDoc(collection(db, "trips"), {
     destination,
     amount,
+    fuelCost,
+    driverPay,
+    profit,
     status: "pending",
     createdAt: Date.now()
   });
 
   document.getElementById("destination").value = "";
   document.getElementById("amount").value = "";
+  document.getElementById("fuelCost").value = "";
+  document.getElementById("driverPay").value = "";
 };
 
-// 🔹 UPDATE
+// 🔹 UPDATE STATUS
 window.markDone = async function(id) {
   await updateDoc(doc(db, "trips", id), {
     status: "completed"
   });
 };
 
-// 🔹 RENDER
+// 🔹 RENDER UI (DASHBOARD + TRIPS + EARNINGS)
 function renderUI() {
   const list = document.getElementById("tripList");
-  const total = document.getElementById("totalTrips");
-  const completed = document.getElementById("completedTrips");
-  const revenue = document.getElementById("totalRevenue");
+  const totalTripsEl = document.getElementById("totalTrips");
+  const completedTripsEl = document.getElementById("completedTrips");
+  const revenueEl = document.getElementById("totalRevenue");
+  const profitEl = document.getElementById("totalProfit");
 
   list.innerHTML = "";
 
   let completedCount = 0;
   let totalRevenue = 0;
+  let totalProfit = 0;
 
   trips.forEach(trip => {
     if (trip.status === "completed") completedCount++;
-    if (trip.amount) totalRevenue += trip.amount;
+
+    totalRevenue += Number(trip.amount || 0);
+    totalProfit += Number(trip.profit || 0);
 
     const li = document.createElement("li");
     li.innerHTML = `
-      ${trip.destination} - JMD ${trip.amount} - ${trip.status}
-      <button onclick="markDone('${trip.id}')">Done</button>
+      <strong>${trip.destination || ""}</strong>
+      <div class="small">
+        Revenue: JMD ${trip.amount || 0} |
+        Fuel: JMD ${trip.fuelCost || 0} |
+        Driver: JMD ${trip.driverPay || 0} |
+        Profit: JMD ${trip.profit || 0} |
+        Status: ${trip.status || "pending"}
+      </div>
+      <button onclick="markDone('${trip.id}')">Mark Done</button>
     `;
+
     list.appendChild(li);
   });
 
-  total.textContent = trips.length;
-  completed.textContent = completedCount;
-  revenue.textContent = totalRevenue;
+  totalTripsEl.textContent = trips.length;
+  completedTripsEl.textContent = completedCount;
+  revenueEl.textContent = totalRevenue;
+  profitEl.textContent = totalProfit;
 }
 
 </script>
