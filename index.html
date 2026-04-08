@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Khalorna Xpress System (No Email Login)</title>
+<title>Khalorna Xpress System (PIN Login)</title>
 
 <style>
 body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
@@ -12,7 +12,7 @@ body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
 .active { background:#2e4a9e !important; }
 .container { padding:20px; }
 .card { background:#132040; padding:15px; margin-bottom:10px; border-radius:10px; }
-input, select { padding:6px; margin:4px 0; }
+input { padding:6px; margin:4px 0; }
 button { padding:6px 10px; }
 .hidden { display:none; }
 </style>
@@ -23,12 +23,11 @@ button { padding:6px 10px; }
 <!-- LOGIN -->
 <div id="loginSection" class="container">
   <div class="card">
-    <h3>Login</h3>
-    <input id="username" placeholder="Enter Name (e.g. Diony)">
-    <select id="roleSelect">
-      <option value="driver">Driver</option>
-      <option value="admin">Admin</option>
-    </select>
+    <h3>Driver Login</h3>
+
+    <input id="username" placeholder="Driver Name">
+    <input id="pin" type="password" placeholder="4-digit PIN">
+
     <button onclick="login()">Enter</button>
   </div>
 </div>
@@ -38,11 +37,11 @@ button { padding:6px 10px; }
 
 <div class="nav">
   <button onclick="switchTab('dashboard')" id="tab-dashboard" class="active">Dashboard</button>
-  <button onclick="switchTab('trips')" id="tab-trips">Trips</button>
-  <button onclick="switchTab('earnings')" id="tab-earnings">Earnings</button>
-  <button onclick="switchTab('drivers')" id="tab-drivers">Drivers</button>
-  <button onclick="switchTab('customers')" id="tab-customers">Customers</button>
-  <button onclick="switchTab('fleet')" id="tab-fleet">Fleet</button>
+  <button onclick="switchTab('trips')">Trips</button>
+  <button onclick="switchTab('earnings')">Earnings</button>
+  <button onclick="switchTab('drivers')">Drivers</button>
+  <button onclick="switchTab('customers')">Customers</button>
+  <button onclick="switchTab('fleet')">Fleet</button>
 </div>
 
 <div class="container">
@@ -61,8 +60,7 @@ button { padding:6px 10px; }
     <input id="amount" type="number" placeholder="Revenue">
     <input id="fuelCost" type="number" placeholder="Fuel Cost">
     <input id="driverPay" type="number" placeholder="Driver Pay">
-    <input id="driverName" placeholder="Driver Name">
-    <input id="customerName" placeholder="Customer Name">
+    <input id="customerName" placeholder="Customer">
     <input id="truckId" placeholder="Truck ID">
     <button onclick="addTrip()">Add Trip</button>
   </div>
@@ -85,7 +83,7 @@ button { padding:6px 10px; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
@@ -100,14 +98,23 @@ let trips = [];
 let currentUser = null;
 let userRole = "driver";
 
+// 🔐 PIN USERS (TEMP – replace with Firebase later)
+const users = {
+  "Diony": { pin: "1234", role: "driver" },
+  "Admin": { pin: "9999", role: "admin" }
+};
+
 window.login = function() {
   const name = document.getElementById("username").value;
-  const role = document.getElementById("roleSelect").value;
+  const pin = document.getElementById("pin").value;
 
-  if (!name) return alert("Enter your name");
+  if (!users[name] || users[name].pin !== pin) {
+    alert("Invalid name or PIN");
+    return;
+  }
 
   currentUser = { name };
-  userRole = role;
+  userRole = users[name].role;
 
   document.getElementById("loginSection").style.display = "none";
   document.getElementById("appSection").classList.remove("hidden");
@@ -123,27 +130,23 @@ window.addTrip = async function() {
   const amount = Number(document.getElementById("amount").value);
   const fuelCost = Number(document.getElementById("fuelCost").value||0);
   const driverPay = Number(document.getElementById("driverPay").value||0);
-  const driver = document.getElementById("driverName").value || currentUser.name;
   const customer = document.getElementById("customerName").value;
   const truck = document.getElementById("truckId").value;
 
   const profit = amount - (fuelCost + driverPay);
 
   await addDoc(collection(db, "trips"), {
-    destination, amount, fuelCost, driverPay, driver, customer, truck,
-    profit, status:"pending", createdAt:Date.now()
+    destination, amount, fuelCost, driverPay,
+    driver: currentUser.name,
+    customer, truck, profit, createdAt: Date.now()
   });
-};
-
-window.markDone = async function(id) {
-  await updateDoc(doc(db, "trips", id), { status:"completed" });
 };
 
 onSnapshot(collection(db, "trips"), snapshot => {
   trips = [];
   snapshot.forEach(d => {
-    const data = { id:d.id, ...d.data() };
-    if(userRole==="admin" || data.driver===currentUser.name) trips.push(data);
+    const data = { ...d.data() };
+    if(userRole === "admin" || data.driver === currentUser.name) trips.push(data);
   });
   render();
 });
