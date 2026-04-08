@@ -15,10 +15,24 @@ body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
 input { padding:6px; margin:4px 0; }
 button { padding:6px 10px; }
 .small { font-size:12px; opacity:0.8; }
+.hidden { display:none; }
 </style>
 </head>
 
 <body>
+
+<!-- LOGIN -->
+<div id="loginSection" class="container">
+  <div class="card">
+    <h3>Login</h3>
+    <input id="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appSection" class="hidden">
 
 <div class="nav">
   <button onclick="switchTab('dashboard')" id="tab-dashboard" class="active">Dashboard</button>
@@ -27,6 +41,7 @@ button { padding:6px 10px; }
   <button onclick="switchTab('drivers')" id="tab-drivers">Drivers</button>
   <button onclick="switchTab('reports')" id="tab-reports">Reports</button>
   <button onclick="switchTab('customers')" id="tab-customers">Customers</button>
+  <button onclick="switchTab('fleet')" id="tab-fleet">Fleet</button>
 </div>
 
 <div class="container">
@@ -49,49 +64,44 @@ button { padding:6px 10px; }
     <input id="driverPay" type="number" placeholder="Driver Pay">
     <input id="driverName" placeholder="Driver Name">
     <input id="customerName" placeholder="Customer Name">
+    <input id="truckId" placeholder="Truck ID">
     <button onclick="addTrip()">Add Trip</button>
   </div>
-
-  <div class="card">
-    <h3>Trips</h3>
-    <ul id="tripList"></ul>
-  </div>
+  <div class="card"><ul id="tripList"></ul></div>
 </div>
 
 <div id="earnings" style="display:none;">
   <div class="card">
-    <h3>Financial Summary</h3>
     <p>Total Revenue: JMD <span id="totalRevenue2">0</span></p>
     <p>Total Profit: JMD <span id="totalProfit2">0</span></p>
   </div>
 </div>
 
-<div id="drivers" style="display:none;">
-  <div class="card">
-    <h3>Driver Earnings</h3>
-    <ul id="driverEarningsList"></ul>
-  </div>
-</div>
+<div id="drivers" style="display:none;"><div class="card"><ul id="driverEarningsList"></ul></div></div>
 
 <div id="reports" style="display:none;">
   <div class="card">
-    <h3>Monthly Report</h3>
     <p id="monthlyReport"></p>
+    <button onclick="exportCSV()">Export CSV</button>
   </div>
 </div>
 
-<div id="customers" style="display:none;">
+<div id="customers" style="display:none;"><div class="card"><ul id="customerList"></ul></div></div>
+
+<div id="fleet" style="display:none;">
   <div class="card">
-    <h3>Customer Revenue</h3>
-    <ul id="customerList"></ul>
+    <h3>Fleet Performance</h3>
+    <ul id="fleetList"></ul>
   </div>
 </div>
 
+</div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
@@ -101,8 +111,25 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 let trips = [];
+let userRole = "admin";
+let currentUser = null;
+
+window.login = async function() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const userCred = await signInWithEmailAndPassword(auth, email, password);
+  currentUser = userCred.user;
+
+  const roleDoc = await getDoc(doc(db, "users", email));
+  if (roleDoc.exists()) userRole = roleDoc.data().role;
+
+  document.getElementById("loginSection").style.display = "none";
+  document.getElementById("appSection").classList.remove("hidden");
+};
 
 window.switchTab = function(tab) {
   document.querySelectorAll('[id^="tab-"]').forEach(b => b.classList.remove("active"));
@@ -111,32 +138,20 @@ window.switchTab = function(tab) {
   document.getElementById("tab-"+tab).classList.add("active");
 }
 
-// 🔥 MAKE FUNCTIONS GLOBAL (IMPORTANT FIX)
 window.addTrip = async function() {
-  const destinationVal = document.getElementById("destination").value;
-  const amountVal = Number(document.getElementById("amount").value);
-  const fuelCostVal = Number(document.getElementById("fuelCost").value || 0);
-  const driverPayVal = Number(document.getElementById("driverPay").value || 0);
-  const driverVal = document.getElementById("driverName").value || "Unassigned";
-  const customerVal = document.getElementById("customerName").value || "Unknown";
+  const destination = document.getElementById("destination").value;
+  const amount = Number(document.getElementById("amount").value);
+  const fuelCost = Number(document.getElementById("fuelCost").value||0);
+  const driverPay = Number(document.getElementById("driverPay").value||0);
+  const driver = document.getElementById("driverName").value;
+  const customer = document.getElementById("customerName").value;
+  const truck = document.getElementById("truckId").value;
 
-  if (!destinationVal || !amountVal) {
-    alert("Enter destination and revenue");
-    return;
-  }
-
-  const profit = amountVal - (fuelCostVal + driverPayVal);
+  const profit = amount - (fuelCost + driverPay);
 
   await addDoc(collection(db, "trips"), {
-    destination: destinationVal,
-    amount: amountVal,
-    fuelCost: fuelCostVal,
-    driverPay: driverPayVal,
-    driver: driverVal,
-    customer: customerVal,
-    profit,
-    status: "pending",
-    createdAt: Date.now()
+    destination, amount, fuelCost, driverPay, driver, customer, truck,
+    profit, status: "pending", createdAt: Date.now()
   });
 };
 
@@ -146,17 +161,21 @@ window.markDone = async function(id) {
 
 onSnapshot(collection(db, "trips"), (snapshot) => {
   trips = [];
-  snapshot.forEach(doc => trips.push({ id: doc.id, ...doc.data() }));
+  snapshot.forEach(d => {
+    const data = { id:d.id, ...d.data() };
+    if(userRole==="admin" || data.driver===currentUser?.email) trips.push(data);
+  });
   render();
 });
 
 function render() {
   let revenue=0, profit=0, completed=0;
-  let drivers={}, customers={}, monthly=0;
+  let drivers={}, customers={}, fleet={}, monthly=0;
 
   tripList.innerHTML="";
   driverEarningsList.innerHTML="";
   customerList.innerHTML="";
+  fleetList.innerHTML="";
 
   trips.forEach(t=>{
     revenue+=t.amount||0;
@@ -165,31 +184,42 @@ function render() {
 
     drivers[t.driver]=(drivers[t.driver]||0)+(t.driverPay||0);
     customers[t.customer]=(customers[t.customer]||0)+(t.amount||0);
+    fleet[t.truck]=(fleet[t.truck]||0)+(t.profit||0);
 
     if(Date.now()-t.createdAt<2592000000) monthly+=t.profit||0;
 
     const li=document.createElement("li");
     li.innerHTML=`${t.destination} | ${t.driver} | Profit: ${t.profit}
-      <button onclick="markDone('${t.id}')">Done</button>`;
+    <button onclick="markDone('${t.id}')">Done</button>
+    <button onclick="generateInvoice('${t.destination}','${t.customer}','${t.amount}')">Invoice</button>`;
     tripList.appendChild(li);
   });
 
-  Object.keys(drivers).forEach(d=>{
-    driverEarningsList.innerHTML+=`<li>${d}: JMD ${drivers[d]}</li>`;
-  });
-
-  Object.keys(customers).forEach(c=>{
-    customerList.innerHTML+=`<li>${c}: JMD ${customers[c]}</li>`;
-  });
+  Object.keys(drivers).forEach(d=> driverEarningsList.innerHTML+=`<li>${d}: ${drivers[d]}</li>`);
+  Object.keys(customers).forEach(c=> customerList.innerHTML+=`<li>${c}: ${customers[c]}</li>`);
+  Object.keys(fleet).forEach(f=> fleetList.innerHTML+=`<li>${f}: Profit ${fleet[f]}</li>`);
 
   totalTrips.textContent=trips.length;
   totalRevenue.textContent=revenue;
   totalProfit.textContent=profit;
   totalRevenue2.textContent=revenue;
   totalProfit2.textContent=profit;
-  completedTrips.textContent=completed;
-  monthlyReport.textContent=`Monthly Profit: JMD ${monthly}`;
+  monthlyReport.textContent=`Monthly Profit: ${monthly}`;
 }
+
+window.exportCSV = function() {
+  let csv="Destination,Driver,Revenue,Profit\n";
+  trips.forEach(t=> csv+=`${t.destination},${t.driver},${t.amount},${t.profit}\n`);
+  const blob=new Blob([csv]);
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download="report.csv";
+  a.click();
+};
+
+window.generateInvoice = function(dest, customer, amount) {
+  alert(`Invoice\nCustomer: ${customer}\nTrip: ${dest}\nAmount: JMD ${amount}`);
+};
 
 </script>
 
