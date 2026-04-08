@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Khalorna Xpress System (Offline Enabled)</title>
+<title>Khalorna Xpress System (Analytics Enabled)</title>
 
 <style>
 body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
@@ -13,7 +13,7 @@ body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
 .card { background:#132040; padding:15px; margin-bottom:10px; border-radius:10px; }
 input { padding:6px; margin:4px 0; }
 .hidden { display:none; }
-.status { font-size:12px; }
+canvas { background:white; border-radius:8px; }
 </style>
 </head>
 
@@ -21,9 +21,8 @@ input { padding:6px; margin:4px 0; }
 
 <div id="loginSection" class="container">
   <div class="card">
-    <h3>Login (PIN)</h3>
+    <h3>Login</h3>
     <input id="username" placeholder="Driver Name">
-    <input id="pin" type="password" placeholder="PIN">
     <button onclick="login()">Enter</button>
   </div>
 </div>
@@ -33,6 +32,7 @@ input { padding:6px; margin:4px 0; }
 <div class="nav">
   <button onclick="switchTab('dashboard')">Dashboard</button>
   <button onclick="switchTab('trips')">Trips</button>
+  <button onclick="switchTab('analytics')">Analytics</button>
 </div>
 
 <div class="container">
@@ -41,7 +41,6 @@ input { padding:6px; margin:4px 0; }
   <div class="card">
     <p>Total Trips: <span id="totalTrips">0</span></p>
     <p>Total Profit: <span id="totalProfit">0</span></p>
-    <p class="status">Status: <span id="syncStatus">Online</span></p>
   </div>
 </div>
 
@@ -56,8 +55,21 @@ input { padding:6px; margin:4px 0; }
   <ul id="tripList"></ul>
 </div>
 
+<div id="analytics" style="display:none;">
+  <div class="card">
+    <h3>Profit by Driver</h3>
+    <canvas id="driverChart"></canvas>
+  </div>
+  <div class="card">
+    <h3>Profit Trend</h3>
+    <canvas id="trendChart"></canvas>
+  </div>
+</div>
+
 </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -74,28 +86,13 @@ const db = getFirestore(app);
 
 let currentUser = null;
 let trips = [];
-
-// LOCAL QUEUE FOR OFFLINE
-let offlineQueue = JSON.parse(localStorage.getItem("offlineQueue") || "[]");
-
-function updateStatus(){
-  document.getElementById("syncStatus").textContent = navigator.onLine ? "Online" : "Offline";
-}
-
-window.addEventListener("online", async ()=>{
-  updateStatus();
-  await syncOfflineData();
-});
-
-window.addEventListener("offline", updateStatus);
-
-updateStatus();
+let driverChart, trendChart;
 
 window.login = function(){
   currentUser = { name: document.getElementById("username").value };
   loginSection.style.display="none";
   appSection.classList.remove("hidden");
-};
+}
 
 window.switchTab = function(tab){
   document.querySelectorAll('.container > div').forEach(d=>d.style.display='none');
@@ -103,47 +100,26 @@ window.switchTab = function(tab){
 }
 
 window.addTrip = async function(){
-  const trip = {
-    destination: document.getElementById("destination").value,
-    amount: Number(document.getElementById("amount").value),
-    fuel: Number(document.getElementById("fuelCost").value||0),
-    pay: Number(document.getElementById("driverPay").value||0),
+  const destination = document.getElementById("destination").value;
+  const amount = Number(document.getElementById("amount").value);
+  const fuel = Number(document.getElementById("fuelCost").value||0);
+  const pay = Number(document.getElementById("driverPay").value||0);
+
+  const profit = amount - (fuel + pay);
+
+  await addDoc(collection(db,"trips"),{
+    destination, amount, fuel, pay,
     driver: currentUser.name,
+    profit,
     createdAt: Date.now()
-  };
-
-  trip.profit = trip.amount - (trip.fuel + trip.pay);
-
-  if(navigator.onLine){
-    await addDoc(collection(db,"trips"), trip);
-  } else {
-    offlineQueue.push(trip);
-    localStorage.setItem("offlineQueue", JSON.stringify(offlineQueue));
-    alert("Saved offline. Will sync when online.");
-  }
+  });
 };
-
-async function syncOfflineData(){
-  if(offlineQueue.length === 0) return;
-
-  for(const trip of offlineQueue){
-    try{
-      await addDoc(collection(db,"trips"), trip);
-    } catch(e){
-      console.log("Retry failed", e);
-      return;
-    }
-  }
-
-  offlineQueue = [];
-  localStorage.removeItem("offlineQueue");
-  alert("Offline data synced successfully");
-}
 
 onSnapshot(collection(db,"trips"), snap=>{
   trips=[];
   snap.forEach(d=>trips.push(d.data()));
   render();
+  drawCharts();
 });
 
 function render(){
@@ -160,3 +136,38 @@ function render(){
   totalTrips.textContent=trips.length;
   totalProfit.textContent=total;
 }
+
+function drawCharts(){
+  const driverTotals = {};
+  const trendData = {};
+
+  trips.forEach(t=>{
+    driverTotals[t.driver]=(driverTotals[t.driver]||0)+t.profit;
+
+    const day = new Date(t.createdAt).toLocaleDateString();
+    trendData[day]=(trendData[day]||0)+t.profit;
+  });
+
+  const driverLabels = Object.keys(driverTotals);
+  const driverValues = Object.values(driverTotals);
+
+  if(driverChart) driverChart.destroy();
+  driverChart = new Chart(document.getElementById("driverChart"),{
+    type:'bar',
+    data:{ labels:driverLabels, datasets:[{ label:'Profit', data:driverValues }] }
+  });
+
+  const trendLabels = Object.keys(trendData);
+  const trendValues = Object.values(trendData);
+
+  if(trendChart) trendChart.destroy();
+  trendChart = new Chart(document.getElementById("trendChart"),{
+    type:'line',
+    data:{ labels:trendLabels, datasets:[{ label:'Daily Profit', data:trendValues }] }
+  });
+}
+
+</script>
+
+</body>
+</html>
