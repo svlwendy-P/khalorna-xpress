@@ -1,1 +1,1619 @@
-null
+{
+  "v": 6,
+  "nid": 200,
+  "invites": [],
+  "expenses": [],
+  "notifications": [],
+  "recurring": [],
+  "destinations": [
+    {
+      "n": "Downtown",
+      "p": 20000,
+      "d5": 2500,
+      "a5": 2500,
+      "d7": 2500,
+      "a7": 2500,
+      "d10": 2500,
+      "a10": 2500,
+      "w5": 13582,
+      "wd5": 2000,
+      "wa5": 2000,
+      "w7": 17197,
+      "wd7": 2500,
+      "wa7": 2500,
+      "w10": 22422,
+      "wd10": 3500,
+      "wa10": 3500
+    },
+    {
+      "n": "Kingston , Round Town, Half Way Tree ,Liguanea,JacksHill,",
+      "p": 20000,
+      "d5": 2500,
+      "a5": 2500,
+      "d7": 2500,
+      "a7": 2500,
+      "d10": 2500,
+      "a10": 2500,
+      "w5": 13243,
+      "wd5": 2000,
+      "wa5": 2000,
+      "w7": 16536,
+      "wd7": 2500,
+      "wa7": 2500,
+      "w10": 21488,
+      "wd10": 3500,
+      "wa10": 3500
+    },
+    {
+      "n": "Spanish Town, Portmore, Ferry",
+      "p": 20000,
+      "d5": 3000,
+      "a5": 2500,
+      "d7": 3000,
+      "a7": 2500,
+      "d10": 3000,
+      "a10": 2500,
+      "w5": 10367,
+      "wd5": 1500,
+      "wa5": 1500,
+      "w7": 13472,
+      "wd7": 3000,
+      "wa7": 2500,
+      "w10": 16779,
+      "wd10": 4500,
+      "wa10": 4000
+    },
+    {
+      "n": "Old Harbour, Old Harbour Bay, Stony Hill, Port Royal, Harbour View, Airport, Bogwalk, Linstead, Riversdale, Papine, Kitson Town",
+      "p": 20000,
+      "d5": 3000,
+      "a5": 2500,
+      "d7": 3000,
+      "a7": 2500,
+      "d10": 3000,
+      "a10": 2500,
+      "w5": 14400,
+      "wd5": 2500,
+      "wa5": 2000,
+      "w7": 16752,
+      "wd7": 3000,
+      "wa7": 2500,
+      "w10": 23623,
+      "wd10": 4000,
+      "wa10": 3500
+    },
+    {
+      "n": "Maypen, Four Paths, Ewarton, New Longsville,  Gordon Town, RedHills, SligoVille",
+      "p": 25000,
+      "d5": 3000,
+      "a5": 3000,
+      "d7": 3000,
+      "a7": 3000,
+      "d10": 3000,
+      "a10": 3000,
+      "w5": 16202,
+      "wd5": 2000,
+      "wa5": 2000,
+      "w7": 18937,
+      "wd7": 3000,
+      "wa7": 3000,
+      "w10": 26642,
+      "wd10": 4500,
+      "wa10": 4000
+    },
+    {
+      "n": "Tollgate, Clarendon Park, Above Rocks, BrownsHall, Friendship Gap",
+      "p": 28000,
+      "d5": 3500,
+      "a5": 3000,
+      "d7": 3500,
+      "a7": 3000,
+      "d10": 3500,
+      "a10": 3000,
+      "w5": 21075,
+      "wd5": 2500,
+      "wa5": 2000,
+      "w7": 24570,
+      "wd7": 3500,
+      "wa7": 3000,
+      "w10": 33895,
+      "wd10": 5500,
+      "wa10": 4500
+    },
+    {
+      "n": "Lionel Town, Mitchell Town,  Rocky Point, Race Course, Milk River, Worthy Park, Lawrence Tavern, Golden Spring, Vere, Portland Cottage, Irish Town,",
+      "p": 26000,
+      "d5": 3000,
+      "a5": 3000,
+      "d7": 3000,
+      "a7": 3000,
+      "d10": 3000,
+      "a10": 3000,
+      "w5": 19304,
+      "wd5": 2500,
+      "wa5": 2500,
+      "w7": 22711,
+      "wd7": 3000,
+      "wa7": 3000,
+      "w10": 30803,
+      "wd10": 4500,
+      "wa10": 4000
+    },
+    {
+      "n": "Chapleton, Summerfield, Rock River, Alston, Aenon Town, Mocho, Croft Hill, Mavis Bank,",
+      "p": 29000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 22711,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 26499,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 36234,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "Porus, Williamsfield, Royal Flat, Mandeville, Newport, Kemps Hill, Kellits",
+      "p": 33000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 25949,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 30200,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 41150,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "Wait-A-Bit, Albert Town",
+      "p": 36000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 29067,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 33319,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 44171,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "Spaldings, Christiana, Coleyville, Troy, Frankfield, Thompson Town",
+      "p": 33000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 25949,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 30200,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 41150,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "Junction, Bull Savannah, Top Hill, Munroe, Watchwell, Mountain Side, Ballards Valley, Malvern, New Forest, Alligator Pond",
+      "p": 40000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 31456,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 36648,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 50134,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "Maggoty, Siloah, Balaclava, Lacovia, Newton",
+      "p": 40000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 31456,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 36648,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 50134,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "Santa Cruz, Gutters",
+      "p": 37000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 29100,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 34291,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 46861,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "Black River, New Market, Springfield, Treasure Beach, Southfield",
+      "p": 42000,
+      "d5": 4500,
+      "a5": 4000,
+      "d7": 4500,
+      "a7": 4000,
+      "d10": 4500,
+      "a10": 4000,
+      "w5": 33028,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 38535,
+      "wd7": 4500,
+      "wa7": 4000,
+      "w10": 52576,
+      "wd10": 6000,
+      "wa10": 5500
+    },
+    {
+      "n": "Sav-La-Mar, Grange Hill, Frome, Whithorn, Petersfield, Cornwall Mountain, Bethel Town, Whitehouse, Ginger Hill, Seaford Town",
+      "p": 49000,
+      "d5": 6000,
+      "a5": 5000,
+      "d7": 6000,
+      "a7": 5000,
+      "d10": 6000,
+      "a10": 5000,
+      "w5": 37749,
+      "wd5": 5500,
+      "wa5": 5000,
+      "w7": 45614,
+      "wd7": 6000,
+      "wa7": 5000,
+      "w10": 62478,
+      "wd10": 7500,
+      "wa10": 7000
+    },
+    {
+      "n": "Lucea,  Kingsvale, Maroon Town, Hopewell, Round Hill",
+      "p": 52000,
+      "d5": 7000,
+      "a5": 6500,
+      "d7": 7000,
+      "a7": 6500,
+      "d10": 7000,
+      "a10": 6500,
+      "w5": 41677,
+      "wd5": 5000,
+      "wa5": 4500,
+      "w7": 48602,
+      "wd7": 7000,
+      "wa7": 6500,
+      "w10": 66291,
+      "wd10": 8500,
+      "wa10": 8000
+    },
+    {
+      "n": "Negril, Little London, Darliston, Delveland",
+      "p": 53000,
+      "d5": 7000,
+      "a5": 6500,
+      "d7": 7000,
+      "a7": 6500,
+      "d10": 7000,
+      "a10": 6500,
+      "w5": 42471,
+      "wd5": 5500,
+      "wa5": 5000,
+      "w7": 50335,
+      "wd7": 7000,
+      "wa7": 6500,
+      "w10": 68574,
+      "wd10": 8500,
+      "wa10": 8000
+    },
+    {
+      "n": "Green Island, Orange Bay",
+      "p": 56000,
+      "d5": 7000,
+      "a5": 6500,
+      "d7": 7000,
+      "a7": 6500,
+      "d10": 7000,
+      "a10": 6500,
+      "w5": 45590,
+      "wd5": 6000,
+      "wa5": 5500,
+      "w7": 53453,
+      "wd7": 7000,
+      "wa7": 6500,
+      "w10": 71597,
+      "wd10": 8500,
+      "wa10": 8000
+    },
+    {
+      "n": "Montego Bay,  Wakefield",
+      "p": 48000,
+      "d5": 6000,
+      "a5": 5500,
+      "d7": 6000,
+      "a7": 5500,
+      "d10": 6000,
+      "a10": 5500,
+      "w5": 38503,
+      "wd5": 5000,
+      "wa5": 4500,
+      "w7": 44730,
+      "wd7": 6000,
+      "wa7": 5500,
+      "w10": 58671,
+      "wd10": 7000,
+      "wa10": 6000
+    },
+    {
+      "n": "Cambridge, Lambs River, Anchovy",
+      "p": 51000,
+      "d5": 6000,
+      "a5": 5500,
+      "d7": 6000,
+      "a7": 5500,
+      "d10": 6000,
+      "a10": 5500,
+      "w5": 40870,
+      "wd5": 5000,
+      "wa5": 4500,
+      "w7": 47544,
+      "wd7": 6000,
+      "wa7": 5500,
+      "w10": 61262,
+      "wd10": 7500,
+      "wa10": 7000
+    },
+    {
+      "n": "Falmouth, Clarks Town, Jackson Bay, Ulster Spring, Cave Valley, Alexandria",
+      "p": 41000,
+      "d5": 4500,
+      "a5": 4000,
+      "d7": 4500,
+      "a7": 4000,
+      "d10": 4500,
+      "a10": 4000,
+      "w5": 31456,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 37596,
+      "wd7": 4500,
+      "wa7": 4000,
+      "w10": 51358,
+      "wd10": 6000,
+      "wa10": 5500
+    },
+    {
+      "n": "Claremont, Bamboo, Browns Town, Runaway Bay,  James Hill, Priory, Boscobel",
+      "p": 37000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 29100,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 34128,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 46478,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "St. Anns Bay, Ocho Rios, Retreat, Gayle, Oracabessa, Tower Isle, Jacks River",
+      "p": 35000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 29100,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 34128,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 46478,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "Discovery Bay, Braco, Duncans",
+      "p": 39000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 30704,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 36009,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 49038,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "Guys Hill, Glengoffe, Polly Ground",
+      "p": 25000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 18846,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 21518,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 28162,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "Clonmel, Richmond, Highgate, Islington, Port Maria, Carron Hall",
+      "p": 30000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 22394,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 26554,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 36300,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "Annotto Bay, Windsor Castle, Buff Bay, Skibo",
+      "p": 28000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 20450,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 24848,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 33828,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "Hope Bay, St.Margarets Bay, Port Antonio, Fellowship, Dragon Bay",
+      "p": 42000,
+      "d5": 4500,
+      "a5": 4000,
+      "d7": 4500,
+      "a7": 4000,
+      "d10": 4500,
+      "a10": 4000,
+      "w5": 33589,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 39394,
+      "wd7": 4500,
+      "wa7": 4000,
+      "w10": 51501,
+      "wd10": 6000,
+      "wa10": 5500
+    },
+    {
+      "n": "Boston, Long Bay",
+      "p": 46000,
+      "d5": 4500,
+      "a5": 4000,
+      "d7": 4500,
+      "a7": 4000,
+      "d10": 4500,
+      "a10": 4000,
+      "w5": 36737,
+      "wd5": 4000,
+      "wa5": 3500,
+      "w7": 42764,
+      "wd7": 4500,
+      "wa7": 4000,
+      "w10": 56355,
+      "wd10": 6000,
+      "wa10": 5500
+    },
+    {
+      "n": "Easington, Seaforth, Morant Bay, Lyssons,  Airy Castle, Bull Bay",
+      "p": 30000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 23325,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 27343,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 36270,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "Stokes Hall, Trinityville, Bath, Bowden, Golden Grove",
+      "p": 38000,
+      "d5": 4000,
+      "a5": 3500,
+      "d7": 4000,
+      "a7": 3500,
+      "d10": 4000,
+      "a10": 3500,
+      "w5": 29761,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 34904,
+      "wd7": 4000,
+      "wa7": 3500,
+      "w10": 46478,
+      "wd10": 5500,
+      "wa10": 5000
+    },
+    {
+      "n": "Manchionel, Hectors River",
+      "p": 41000,
+      "d5": 4500,
+      "a5": 4000,
+      "d7": 4500,
+      "a7": 4000,
+      "d10": 4500,
+      "a10": 4000,
+      "w5": 32244,
+      "wd5": 3500,
+      "wa5": 3000,
+      "w7": 37797,
+      "wd7": 4500,
+      "wa7": 4000,
+      "w10": 51277,
+      "wd10": 6000,
+      "wa10": 5500
+    }
+  ],
+  "users": [
+    {
+      "id": "u1",
+      "name": "Admin User",
+      "username": "admin",
+      "password": "admin123",
+      "role": "admin",
+      "phone": "876-559-3028"
+    },
+    {
+      "id": "u2",
+      "name": "Thioney Cole",
+      "username": "thioney",
+      "password": "Pass123",
+      "role": "driver",
+      "phone": "876-456-0983"
+    },
+    {
+      "id": "u3",
+      "name": "Sheldon Powell",
+      "username": "sheldon",
+      "password": "Pass123",
+      "role": "driver",
+      "phone": "876-591-4964"
+    },
+    {
+      "id": "u4",
+      "name": "Raymond Adlam",
+      "username": "raymond",
+      "password": "Pass123",
+      "role": "assistant",
+      "phone": "876-456-0596"
+    },
+    {
+      "id": "u5",
+      "name": "Xpress Ltd",
+      "username": "xpress",
+      "password": "Pass123",
+      "role": "client",
+      "phone": "876-559-3028"
+    }
+  ],
+  "vehicles": [
+    {
+      "id": "v1",
+      "plate": "CP9078",
+      "model": "Isuzu NPR",
+      "tonnage": "7T",
+      "driverId": "u2",
+      "assistantId": "u4"
+    },
+    {
+      "id": "v2",
+      "plate": "CP3535",
+      "model": "Mitsubishi Canter",
+      "tonnage": "7T",
+      "driverId": "u3",
+      "assistantId": null
+    }
+  ],
+  "contracts": [
+    {
+      "id": "tonnage",
+      "name": "Tonnage Contract",
+      "description": "Tonnage-based haulage — 3 tonnage tiers",
+      "color": "#8B5CF6",
+      "rates": {
+        "0_5T": {
+          "clientRate": 13582,
+          "driverPay": 2000,
+          "asstPay": 2000
+        },
+        "0_7T": {
+          "clientRate": 17197,
+          "driverPay": 2500,
+          "asstPay": 2500
+        },
+        "0_10T": {
+          "clientRate": 22422,
+          "driverPay": 3500,
+          "asstPay": 3500
+        },
+        "1_5T": {
+          "clientRate": 13243,
+          "driverPay": 2000,
+          "asstPay": 2000
+        },
+        "1_7T": {
+          "clientRate": 16536,
+          "driverPay": 2500,
+          "asstPay": 2500
+        },
+        "1_10T": {
+          "clientRate": 21488,
+          "driverPay": 3500,
+          "asstPay": 3500
+        },
+        "2_5T": {
+          "clientRate": 10367,
+          "driverPay": 1500,
+          "asstPay": 1500
+        },
+        "2_7T": {
+          "clientRate": 13472,
+          "driverPay": 3000,
+          "asstPay": 2500
+        },
+        "2_10T": {
+          "clientRate": 16779,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "3_5T": {
+          "clientRate": 14400,
+          "driverPay": 2500,
+          "asstPay": 2000
+        },
+        "3_7T": {
+          "clientRate": 16752,
+          "driverPay": 3000,
+          "asstPay": 2500
+        },
+        "3_10T": {
+          "clientRate": 23623,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "4_5T": {
+          "clientRate": 16202,
+          "driverPay": 2000,
+          "asstPay": 2000
+        },
+        "4_7T": {
+          "clientRate": 18937,
+          "driverPay": 3000,
+          "asstPay": 3000
+        },
+        "4_10T": {
+          "clientRate": 26642,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "5_5T": {
+          "clientRate": 21075,
+          "driverPay": 2500,
+          "asstPay": 2000
+        },
+        "5_7T": {
+          "clientRate": 24570,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "5_10T": {
+          "clientRate": 33895,
+          "driverPay": 5500,
+          "asstPay": 4500
+        },
+        "6_5T": {
+          "clientRate": 19304,
+          "driverPay": 2500,
+          "asstPay": 2500
+        },
+        "6_7T": {
+          "clientRate": 22711,
+          "driverPay": 3000,
+          "asstPay": 3000
+        },
+        "6_10T": {
+          "clientRate": 30803,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "7_5T": {
+          "clientRate": 22711,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "7_7T": {
+          "clientRate": 26499,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "7_10T": {
+          "clientRate": 36234,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "8_5T": {
+          "clientRate": 25949,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "8_7T": {
+          "clientRate": 30200,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "8_10T": {
+          "clientRate": 41150,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "9_5T": {
+          "clientRate": 29067,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "9_7T": {
+          "clientRate": 33319,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "9_10T": {
+          "clientRate": 44171,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "10_5T": {
+          "clientRate": 25949,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "10_7T": {
+          "clientRate": 30200,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "10_10T": {
+          "clientRate": 41150,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "11_5T": {
+          "clientRate": 31456,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "11_7T": {
+          "clientRate": 36648,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "11_10T": {
+          "clientRate": 50134,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "12_5T": {
+          "clientRate": 31456,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "12_7T": {
+          "clientRate": 36648,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "12_10T": {
+          "clientRate": 50134,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "13_5T": {
+          "clientRate": 29100,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "13_7T": {
+          "clientRate": 34291,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "13_10T": {
+          "clientRate": 46861,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "14_5T": {
+          "clientRate": 33028,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "14_7T": {
+          "clientRate": 38535,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "14_10T": {
+          "clientRate": 52576,
+          "driverPay": 6000,
+          "asstPay": 5500
+        },
+        "15_5T": {
+          "clientRate": 37749,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "15_7T": {
+          "clientRate": 45614,
+          "driverPay": 6000,
+          "asstPay": 5000
+        },
+        "15_10T": {
+          "clientRate": 62478,
+          "driverPay": 7500,
+          "asstPay": 7000
+        },
+        "16_5T": {
+          "clientRate": 41677,
+          "driverPay": 5000,
+          "asstPay": 4500
+        },
+        "16_7T": {
+          "clientRate": 48602,
+          "driverPay": 7000,
+          "asstPay": 6500
+        },
+        "16_10T": {
+          "clientRate": 66291,
+          "driverPay": 8500,
+          "asstPay": 8000
+        },
+        "17_5T": {
+          "clientRate": 42471,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "17_7T": {
+          "clientRate": 50335,
+          "driverPay": 7000,
+          "asstPay": 6500
+        },
+        "17_10T": {
+          "clientRate": 68574,
+          "driverPay": 8500,
+          "asstPay": 8000
+        },
+        "18_5T": {
+          "clientRate": 45590,
+          "driverPay": 6000,
+          "asstPay": 5500
+        },
+        "18_7T": {
+          "clientRate": 53453,
+          "driverPay": 7000,
+          "asstPay": 6500
+        },
+        "18_10T": {
+          "clientRate": 71597,
+          "driverPay": 8500,
+          "asstPay": 8000
+        },
+        "19_5T": {
+          "clientRate": 38503,
+          "driverPay": 5000,
+          "asstPay": 4500
+        },
+        "19_7T": {
+          "clientRate": 44730,
+          "driverPay": 6000,
+          "asstPay": 5500
+        },
+        "19_10T": {
+          "clientRate": 58671,
+          "driverPay": 7000,
+          "asstPay": 6000
+        },
+        "20_5T": {
+          "clientRate": 40870,
+          "driverPay": 5000,
+          "asstPay": 4500
+        },
+        "20_7T": {
+          "clientRate": 47544,
+          "driverPay": 6000,
+          "asstPay": 5500
+        },
+        "20_10T": {
+          "clientRate": 61262,
+          "driverPay": 7500,
+          "asstPay": 7000
+        },
+        "21_5T": {
+          "clientRate": 31456,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "21_7T": {
+          "clientRate": 37596,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "21_10T": {
+          "clientRate": 51358,
+          "driverPay": 6000,
+          "asstPay": 5500
+        },
+        "22_5T": {
+          "clientRate": 29100,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "22_7T": {
+          "clientRate": 34128,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "22_10T": {
+          "clientRate": 46478,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "23_5T": {
+          "clientRate": 29100,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "23_7T": {
+          "clientRate": 34128,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "23_10T": {
+          "clientRate": 46478,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "24_5T": {
+          "clientRate": 30704,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "24_7T": {
+          "clientRate": 36009,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "24_10T": {
+          "clientRate": 49038,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "25_5T": {
+          "clientRate": 18846,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "25_7T": {
+          "clientRate": 21518,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "25_10T": {
+          "clientRate": 28162,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "26_5T": {
+          "clientRate": 22394,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "26_7T": {
+          "clientRate": 26554,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "26_10T": {
+          "clientRate": 36300,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "27_5T": {
+          "clientRate": 20450,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "27_7T": {
+          "clientRate": 24848,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "27_10T": {
+          "clientRate": 33828,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "28_5T": {
+          "clientRate": 33589,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "28_7T": {
+          "clientRate": 39394,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "28_10T": {
+          "clientRate": 51501,
+          "driverPay": 6000,
+          "asstPay": 5500
+        },
+        "29_5T": {
+          "clientRate": 36737,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "29_7T": {
+          "clientRate": 42764,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "29_10T": {
+          "clientRate": 56355,
+          "driverPay": 6000,
+          "asstPay": 5500
+        },
+        "30_5T": {
+          "clientRate": 23325,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "30_7T": {
+          "clientRate": 27343,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "30_10T": {
+          "clientRate": 36270,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "31_5T": {
+          "clientRate": 29761,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "31_7T": {
+          "clientRate": 34904,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "31_10T": {
+          "clientRate": 46478,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "32_5T": {
+          "clientRate": 32244,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "32_7T": {
+          "clientRate": 37797,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "32_10T": {
+          "clientRate": 51277,
+          "driverPay": 6000,
+          "asstPay": 5500
+        }
+      }
+    },
+    {
+      "id": "hipro_feed",
+      "name": "HI Pro — Feed",
+      "description": "HI Pro contract: Feed deliveries (5T & 7T)",
+      "color": "#F59E0B",
+      "rates": {
+        "0_5T": {
+          "clientRate": 20046.42,
+          "driverPay": 2500,
+          "asstPay": 2500
+        },
+        "0_7T": {
+          "clientRate": 22046.42,
+          "driverPay": 3500,
+          "asstPay": 3500
+        },
+        "1_5T": {
+          "clientRate": 20046.42,
+          "driverPay": 2500,
+          "asstPay": 2500
+        },
+        "1_7T": {
+          "clientRate": 22046.42,
+          "driverPay": 3500,
+          "asstPay": 3500
+        },
+        "2_5T": {
+          "clientRate": 20046.42,
+          "driverPay": 2500,
+          "asstPay": 2500
+        },
+        "2_7T": {
+          "clientRate": 22046.42,
+          "driverPay": 3500,
+          "asstPay": 3500
+        },
+        "3_5T": {
+          "clientRate": 20046.42,
+          "driverPay": 2500,
+          "asstPay": 2500
+        },
+        "3_7T": {
+          "clientRate": 22046.42,
+          "driverPay": 3500,
+          "asstPay": 3500
+        },
+        "4_5T": {
+          "clientRate": 20046.42,
+          "driverPay": 2500,
+          "asstPay": 2500
+        },
+        "4_7T": {
+          "clientRate": 22046.42,
+          "driverPay": 3500,
+          "asstPay": 3500
+        },
+        "5_5T": {
+          "clientRate": 20046.42,
+          "driverPay": 2500,
+          "asstPay": 2500
+        },
+        "5_7T": {
+          "clientRate": 22046.42,
+          "driverPay": 3500,
+          "asstPay": 3500
+        },
+        "6_5T": {
+          "clientRate": 13364.28,
+          "driverPay": 2500,
+          "asstPay": 2500
+        },
+        "6_7T": {
+          "clientRate": 15364.28,
+          "driverPay": 3500,
+          "asstPay": 3500
+        },
+        "7_5T": {
+          "clientRate": 25499.05,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "7_7T": {
+          "clientRate": 27499.05,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "8_5T": {
+          "clientRate": 25499.05,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "8_7T": {
+          "clientRate": 27499.05,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "9_5T": {
+          "clientRate": 25499.05,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "9_7T": {
+          "clientRate": 27499.05,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "10_5T": {
+          "clientRate": 25499.05,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "10_7T": {
+          "clientRate": 27499.05,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "11_5T": {
+          "clientRate": 25499.05,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "11_7T": {
+          "clientRate": 27499.05,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "12_5T": {
+          "clientRate": 25499.05,
+          "driverPay": 3500,
+          "asstPay": 3000
+        },
+        "12_7T": {
+          "clientRate": 27499.05,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "13_5T": {
+          "clientRate": 30737.85,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "13_7T": {
+          "clientRate": 32737.85,
+          "driverPay": 5000,
+          "asstPay": 4500
+        },
+        "14_5T": {
+          "clientRate": 30737.85,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "14_7T": {
+          "clientRate": 32737.85,
+          "driverPay": 5000,
+          "asstPay": 4500
+        },
+        "15_5T": {
+          "clientRate": 30737.85,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "15_7T": {
+          "clientRate": 32737.85,
+          "driverPay": 5000,
+          "asstPay": 4500
+        },
+        "16_5T": {
+          "clientRate": 30737.85,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "16_7T": {
+          "clientRate": 32737.85,
+          "driverPay": 5000,
+          "asstPay": 4500
+        },
+        "17_5T": {
+          "clientRate": 33410.7,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "17_7T": {
+          "clientRate": 35410.7,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "18_5T": {
+          "clientRate": 33410.7,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "18_7T": {
+          "clientRate": 35410.7,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "19_5T": {
+          "clientRate": 33410.7,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "19_7T": {
+          "clientRate": 35410.7,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "20_5T": {
+          "clientRate": 33410.7,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "20_7T": {
+          "clientRate": 35410.7,
+          "driverPay": 5500,
+          "asstPay": 5000
+        }
+      }
+    },
+    {
+      "id": "hipro_chick",
+      "name": "HI Pro — Baby Chick",
+      "description": "HI Pro contract: Baby Chick deliveries (5T & 7T)",
+      "color": "#EC4899",
+      "rates": {
+        "0_5T": {
+          "clientRate": 31923.07,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "0_7T": {
+          "clientRate": 33923.07,
+          "driverPay": 5000,
+          "asstPay": 4500
+        },
+        "1_5T": {
+          "clientRate": 31923.07,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "1_7T": {
+          "clientRate": 33923.07,
+          "driverPay": 5000,
+          "asstPay": 4500
+        },
+        "2_5T": {
+          "clientRate": 31923.07,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "2_7T": {
+          "clientRate": 33923.07,
+          "driverPay": 5000,
+          "asstPay": 4500
+        },
+        "3_5T": {
+          "clientRate": 31923.07,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "3_7T": {
+          "clientRate": 33923.07,
+          "driverPay": 5000,
+          "asstPay": 4500
+        },
+        "4_5T": {
+          "clientRate": 31923.07,
+          "driverPay": 4000,
+          "asstPay": 3500
+        },
+        "4_7T": {
+          "clientRate": 33923.07,
+          "driverPay": 5000,
+          "asstPay": 4500
+        },
+        "7_5T": {
+          "clientRate": 36272.94,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "7_7T": {
+          "clientRate": 38272.94,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "8_5T": {
+          "clientRate": 36272.94,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "8_7T": {
+          "clientRate": 38272.94,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "9_5T": {
+          "clientRate": 36272.94,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "9_7T": {
+          "clientRate": 38272.94,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "10_5T": {
+          "clientRate": 36272.94,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "10_7T": {
+          "clientRate": 38272.94,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "12_5T": {
+          "clientRate": 36272.94,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "12_7T": {
+          "clientRate": 38272.94,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "13_5T": {
+          "clientRate": 36272.94,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "13_7T": {
+          "clientRate": 38272.94,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "14_5T": {
+          "clientRate": 36272.94,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "14_7T": {
+          "clientRate": 38272.94,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "15_5T": {
+          "clientRate": 36272.94,
+          "driverPay": 4500,
+          "asstPay": 4000
+        },
+        "15_7T": {
+          "clientRate": 38272.94,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "16_5T": {
+          "clientRate": 39903.09,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "16_7T": {
+          "clientRate": 41903.09,
+          "driverPay": 6500,
+          "asstPay": 6000
+        },
+        "17_5T": {
+          "clientRate": 39903.09,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "17_7T": {
+          "clientRate": 41903.09,
+          "driverPay": 6500,
+          "asstPay": 6000
+        },
+        "21_5T": {
+          "clientRate": 39903.09,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "21_7T": {
+          "clientRate": 41903.09,
+          "driverPay": 6500,
+          "asstPay": 6000
+        },
+        "19_5T": {
+          "clientRate": 39903.09,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "19_7T": {
+          "clientRate": 41903.09,
+          "driverPay": 6500,
+          "asstPay": 6000
+        },
+        "20_5T": {
+          "clientRate": 39903.09,
+          "driverPay": 5500,
+          "asstPay": 5000
+        },
+        "20_7T": {
+          "clientRate": 41903.09,
+          "driverPay": 6500,
+          "asstPay": 6000
+        }
+      }
+    }
+  ],
+  "trips": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ]
+}
