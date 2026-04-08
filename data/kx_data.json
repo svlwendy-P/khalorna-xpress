@@ -2,7 +2,13 @@
   "v": 6,
   "nid": 200,
   "updatedAt": "2026-04-08T15:39:35.504Z",
-  "settings": {},
+  "settings": {
+    "ghSync": {
+      "repo": "khalorna-xpress/Khalorna-xpress",
+      "branch": "main",
+      "path": "data/kx_data.json"
+    }
+  },
   "invites": [],
   "expenses": [],
   "notifications": [],
