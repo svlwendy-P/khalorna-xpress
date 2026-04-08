@@ -131,12 +131,12 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
 }
 @media(min-width:1024px){
   .app-wrap{max-width:720px;}
-  .bottom-nav{max-width:720px;}
+  .bottom-nav{max-width:720px;overflow-x:auto;}
   .stat-grid{grid-template-columns:repeat(4,1fr);}
   .modal-sheet{max-width:520px;width:100%;}
   .page-content{padding:24px 32px 100px;}
   html,body{font-size:15px;}
-  .nav-item{min-width:72px;font-size:10px;}
+  .nav-item{min-width:64px;font-size:9px;}
   .role-grid{grid-template-columns:repeat(4,1fr);}
 }
 </style>
@@ -341,12 +341,18 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
     <div class="modal-handle"></div>
     <div class="modal-title">Add New Trip</div>
     <div id="add-trip-alert"></div>
-    <div class="form-group"><label>Client Name</label><input class="form-input" id="nt-client" placeholder="Client full name"/></div>
+    <div class="form-group"><label>Client Name</label>
+      <input class="form-input" id="nt-client" placeholder="Type or select client" list="nt-client-list" oninput="autofillClientPhone('nt-client','nt-phone')" autocomplete="off"/>
+      <datalist id="nt-client-list"></datalist>
+    </div>
     <div class="form-group"><label>Client Phone</label><input class="form-input" id="nt-phone" placeholder="876-xxx-xxxx"/></div>
+    <div class="form-group"><label>Contract / Rate Type</label><select class="form-select" id="nt-ctype" onchange="switchDestById('nt-dest','nt-ctype')"></select></div>
     <div class="form-group"><label>Destination</label><select class="form-select" id="nt-dest"></select></div>
     <div class="form-group"><label>Tonnage</label><select class="form-select" id="nt-ton"><option value="5T">5 Ton</option><option value="7T">7 Ton</option><option value="10T">10 Ton</option></select></div>
-    <div class="form-group"><label>Contract / Rate Type</label><select class="form-select" id="nt-ctype" onchange="switchDestById('nt-dest','nt-ctype')"></select></div>
-    <div class="form-group"><label>Assign Vehicle (optional — assign later)</label><select class="form-select" id="nt-vehicle"></select></div>
+    <div class="form-group"><label>Assign Vehicle (optional — assign later)</label>
+      <select class="form-select" id="nt-vehicle" onchange="previewVehicleCrew('nt-vehicle','nt-crew-preview')"></select>
+      <div id="nt-crew-preview" style="margin-top:6px"></div>
+    </div>
     <div class="form-group"><label>Trip Date</label><input class="form-input" id="nt-date" type="date"/></div>
     <div class="form-group"><label>Notes</label><input class="form-input" id="nt-notes" placeholder="Optional notes"/></div>
     <div class="form-group"><label>Cargo Detail</label><input class="form-input" id="nt-cargo" placeholder="e.g. Frozen poultry, temp -18°C"/></div>
@@ -481,11 +487,14 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:p
   <div class="modal-sheet"><div class="modal-handle"></div>
     <div class="modal-title">Edit Trip</div><div id="edit-trip-alert"></div>
     <input type="hidden" id="et-id"/>
-    <div class="form-group"><label>Client Name</label><input class="form-input" id="et-client"/></div>
+    <div class="form-group"><label>Client Name</label>
+      <input class="form-input" id="et-client" list="et-client-list" oninput="autofillClientPhone('et-client','et-phone')" autocomplete="off"/>
+      <datalist id="et-client-list"></datalist>
+    </div>
     <div class="form-group"><label>Client Phone</label><input class="form-input" id="et-phone"/></div>
+    <div class="form-group"><label>Rate Type</label><select class="form-select" id="et-ctype" onchange="switchDestById('et-dest','et-ctype')"></select></div>
     <div class="form-group"><label>Destination</label><select class="form-select" id="et-dest"></select></div>
     <div class="form-group"><label>Tonnage</label><select class="form-select" id="et-ton"><option value="5T">5 Ton</option><option value="7T">7 Ton</option><option value="10T">10 Ton</option></select></div>
-    <div class="form-group"><label>Rate Type</label><select class="form-select" id="et-ctype" onchange="switchDestById('et-dest','et-ctype')"></select></div>
     <div class="form-group"><label>Date</label><input class="form-input" id="et-date" type="date"/></div>
     <div class="form-group"><label>Notes</label><input class="form-input" id="et-notes"/></div>
     <div class="form-group"><label>Cargo Detail</label><input class="form-input" id="et-cargo"/></div>
@@ -829,8 +838,27 @@ function gDB(){
 
 // ── GitHub Sync ──
 const GH={
-  cfg(){try{return JSON.parse(localStorage.getItem('kx_ghconf')||'null');}catch{return null;}},
-  save(c){localStorage.setItem('kx_ghconf',JSON.stringify(c));},
+  cfg(){
+    try{
+      const local=JSON.parse(localStorage.getItem('kx_ghconf')||'null');
+      // Also check db.settings for repo/branch/path (shared across devices via sync)
+      const db=typeof gDB==='function'?gDB():null;
+      const dbCfg=db&&db.settings&&db.settings.ghSync?db.settings.ghSync:{};
+      if(!local&&!dbCfg.repo)return null;
+      return{token:local&&local.token||'',repo:local&&local.repo||dbCfg.repo||'',branch:local&&local.branch||dbCfg.branch||'main',path:local&&local.path||dbCfg.path||'data/kx_data.json'};
+    }catch{return null;}
+  },
+  save(c){
+    localStorage.setItem('kx_ghconf',JSON.stringify(c));
+    // Also store non-secret fields in db so other devices inherit repo/branch/path
+    try{
+      const db=gDB();if(db){
+        if(!db.settings)db.settings={};
+        db.settings.ghSync={repo:c.repo,branch:c.branch||'main',path:c.path||'data/kx_data.json'};
+        localStorage.setItem('kx_v6',JSON.stringify(db));// direct write to avoid GH push loop
+      }
+    }catch{}
+  },
   _timer:null,
   push(data){
     const c=GH.cfg();if(!c||!c.token||!c.repo)return;
@@ -1385,6 +1413,8 @@ function dupTrip(tid){
   document.getElementById('nt-notes').value=t.notes||'';
   document.getElementById('nt-cargo').value=t.cargoDetail||'';
   document.getElementById('nt-recur').value='none';
+  document.getElementById('nt-crew-preview').innerHTML='';
+  buildClientDatalist('nt-client-list');
   document.getElementById('add-trip-alert').innerHTML=`<div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:8px;padding:9px 12px;font-size:12px;color:#60A5FA;margin-bottom:12px">📋 Duplicated from Ref ${t.id.toUpperCase()} — update the date and save.</div>`;
   document.getElementById('modal-add-trip').classList.add('open');
 }
@@ -1400,6 +1430,47 @@ function switchDestById(destSelId,ctypeSelId){
   const ctype=document.getElementById(ctypeSelId).value;
   document.getElementById(destSelId).innerHTML=destOpts(ctype,0);
 }
+// ── Client datalist + phone autofill ──
+function buildClientDatalist(datalistId){
+  const db=gDB();
+  const clients=db.users.filter(u=>u.role==='client');
+  // Also grab unique client names from past trips
+  const tripClients=[];
+  const seen=new Set(clients.map(u=>u.name.toLowerCase()));
+  (db.trips||[]).forEach(t=>{
+    if(t.clientName&&!seen.has(t.clientName.toLowerCase())){
+      seen.add(t.clientName.toLowerCase());
+      tripClients.push({name:t.clientName,phone:t.clientPhone||''});
+    }
+  });
+  const all=[...clients.map(u=>({name:u.name,phone:u.phone||''})),...tripClients];
+  const el=document.getElementById(datalistId);
+  if(el)el.innerHTML=all.map(c=>`<option value="${c.name}" data-phone="${c.phone}">`).join('');
+}
+function autofillClientPhone(nameId,phoneId){
+  const db=gDB();
+  const name=document.getElementById(nameId).value.trim().toLowerCase();
+  if(!name)return;
+  // Check registered clients first
+  const client=db.users.find(u=>u.role==='client'&&u.name.toLowerCase()===name);
+  if(client&&client.phone){document.getElementById(phoneId).value=client.phone;return;}
+  // Fallback: scan trip history for same client name
+  const trip=(db.trips||[]).slice().reverse().find(t=>t.clientName&&t.clientName.toLowerCase()===name&&t.clientPhone);
+  if(trip)document.getElementById(phoneId).value=trip.clientPhone;
+}
+// ── Vehicle crew preview ──
+function previewVehicleCrew(vehicleSelId,previewDivId){
+  const db=gDB();
+  const vid=document.getElementById(vehicleSelId).value;
+  const div=document.getElementById(previewDivId);
+  if(!div)return;
+  if(!vid){div.innerHTML='';return;}
+  const v=db.vehicles.find(x=>x.id===vid);
+  if(!v){div.innerHTML='';return;}
+  const dr=db.users.find(u=>u.id===v.driverId);
+  const as=db.users.find(u=>u.id===v.assistantId);
+  div.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px">${ib('Driver',dr?dr.name:'Unassigned')}${ib('Assistant',as?as.name:'Unassigned')}</div>`;
+}
 function openAddTripModal(){
   const db=gDB();
   const ctypeOpts=`<option value="private">Private Work</option>`+db.contracts.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
@@ -1408,7 +1479,10 @@ function openAddTripModal(){
   document.getElementById('nt-vehicle').innerHTML='<option value="">— Assign later —</option>'+(db.vehicles.length?db.vehicles.map(v=>`<option value="${v.id}">${v.plate} · ${v.model} (${v.tonnage})</option>`).join(''):'');
   document.getElementById('nt-date').value=ds(0);
   document.getElementById('add-trip-alert').innerHTML='';
-  ['nt-client','nt-phone','nt-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('nt-crew-preview').innerHTML='';
+  ['nt-client','nt-phone','nt-notes','nt-cargo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('nt-recur').value='none';
+  buildClientDatalist('nt-client-list');
   document.getElementById('modal-add-trip').classList.add('open');
 }
 // ── Phone Validator
@@ -1617,19 +1691,21 @@ function delVehicle(vid){
 
 // ── Edit Trip
 function openEditTripModal(tid){
-  const db=gDB();const dests=gDEST();const t=db.trips.find(x=>x.id===tid);if(!t)return;
+  const db=gDB();const t=db.trips.find(x=>x.id===tid);if(!t)return;
   document.getElementById('et-id').value=tid;
   document.getElementById('et-client').value=t.clientName;
   document.getElementById('et-phone').value=t.clientPhone||'';
   const hipro=isHipro(t.ctype);
   const selIdx=hipro?(t.hdi!=null?t.hdi:0):t.di;
+  // Rate type first, then populate dest based on it
+  document.getElementById('et-ctype').innerHTML=`<option value="private" ${t.ctype==='private'?'selected':''}>Private Work</option>`+db.contracts.map(c=>`<option value="${c.id}" ${t.ctype===c.id?'selected':''}>${c.name}</option>`).join('');
   document.getElementById('et-dest').innerHTML=destOpts(t.ctype,selIdx);
   document.getElementById('et-ton').value=t.tonnage;
-  document.getElementById('et-ctype').innerHTML=`<option value="private" ${t.ctype==='private'?'selected':''}>Private Work</option>`+db.contracts.map(c=>`<option value="${c.id}" ${t.ctype===c.id?'selected':''}>${c.name}</option>`).join('');
   document.getElementById('et-date').value=t.date;
   document.getElementById('et-notes').value=t.notes||'';
   document.getElementById('et-cargo').value=t.cargoDetail||'';
   document.getElementById('edit-trip-alert').innerHTML='';
+  buildClientDatalist('et-client-list');
   closeModal('modal-trip');document.getElementById('modal-edit-trip').classList.add('open');
 }
 function saveEditTrip(){
@@ -3162,6 +3238,7 @@ if(!navigator.onLine)showOfflineToast('You\'re offline — using saved data. Wha
 // ── ADMIN SETTINGS TAB (change own password + GitHub sync) ──
 function renderAdminSettings(){
   const c=GH.cfg()||{};
+  const db=gDB();const dbGh=(db&&db.settings&&db.settings.ghSync)||{};
   document.getElementById('admin-content').innerHTML=`
     <div class="sec-hdr"><div class="sec-ttl">Settings</div></div>
     <div class="card" style="margin-bottom:14px">
@@ -3185,10 +3262,13 @@ function renderAdminSettings(){
       <div style="font-family:'Barlow Semi Condensed',sans-serif;font-size:17px;font-weight:700;margin-bottom:4px">GitHub Data Sync</div>
       <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Sync app data to a GitHub repo so it persists beyond this device.</p>
       <div id="gh-config-alert"></div>
-      <div class="form-group"><label>Personal Access Token</label><input class="form-input" id="gh-token" type="password" placeholder="ghp_xxxxxxxxxxxxxxxx" value="${c.token||''}"/></div>
-      <div class="form-group"><label>Repo (owner/repo)</label><input class="form-input" id="gh-repo" placeholder="khalorna-xpress/khalorna-xpress" value="${c.repo||''}"/></div>
-      <div class="form-group"><label>Branch</label><input class="form-input" id="gh-branch" placeholder="main" value="${c.branch||'main'}"/></div>
-      <div class="form-group"><label>File Path</label><input class="form-input" id="gh-path" placeholder="data/kx_data.json" value="${c.path||'data/kx_data.json'}"/></div>
+      <div class="form-group"><label>Personal Access Token</label>
+        <input class="form-input" id="gh-token" type="password" placeholder="ghp_xxxxxxxxxxxxxxxx" value="${c.token||''}"/>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Token stays on this device only (security). Enter it once per device.</div>
+      </div>
+      <div class="form-group"><label>Repo (owner/repo)</label><input class="form-input" id="gh-repo" placeholder="khalorna-xpress/khalorna-xpress" value="${c.repo||dbGh.repo||''}"/></div>
+      <div class="form-group"><label>Branch</label><input class="form-input" id="gh-branch" placeholder="main" value="${c.branch||dbGh.branch||'main'}"/></div>
+      <div class="form-group"><label>File Path</label><input class="form-input" id="gh-path" placeholder="data/kx_data.json" value="${c.path||dbGh.path||'data/kx_data.json'}"/></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn-primary" style="flex:2" onclick="saveGhConfig()">Save & Test Connection</button>
         <button class="btn-sm btn-ghost" style="flex:1;padding:12px" onclick="syncFromGitHub()">⬇ Pull Now</button>
@@ -3215,18 +3295,25 @@ function saveAdminOwnPwd(){
   if(u.password!==cur){al.innerHTML='<div class="alert alert-err">Current password is incorrect.</div>';return;}
   if(nw.length<6){al.innerHTML='<div class="alert alert-err">New password must be at least 6 characters.</div>';return;}
   if(nw!==con){al.innerHTML='<div class="alert alert-err">Passwords do not match.</div>';return;}
-  u.password=nw;sDB(db);
+  u.password=nw;CU.password=nw;sDB(db);
   al.innerHTML='<div class="alert alert-ok">✓ Password updated successfully.</div>';
   ['acp-cur','acp-new','acp-con'].forEach(id=>document.getElementById(id).value='');
 }
 function saveGhConfig(){
   const al=document.getElementById('gh-config-alert');
-  const cfg={token:document.getElementById('gh-token').value.trim(),repo:document.getElementById('gh-repo').value.trim(),branch:document.getElementById('gh-branch').value.trim()||'main',path:document.getElementById('gh-path').value.trim()||'data/kx_data.json'};
+  const cfg={
+    token:document.getElementById('gh-token').value.trim(),
+    repo:document.getElementById('gh-repo').value.trim(),
+    branch:document.getElementById('gh-branch').value.trim()||'main',
+    path:document.getElementById('gh-path').value.trim()||'data/kx_data.json'
+  };
   if(!cfg.token||!cfg.repo){al.innerHTML='<div class="alert alert-err">Token and repo are required.</div>';return;}
   GH.save(cfg);
   al.innerHTML='<div class="alert alert-ok">✓ Saved. Testing connection…</div>';
   GH.push(gDB());
-  setTimeout(()=>{if(al)al.innerHTML='<div class="alert alert-ok">✓ Configuration saved. Data will sync automatically on every save.</div>';},3000);
+  setTimeout(()=>{
+    if(al)al.innerHTML='<div class="alert alert-ok">✓ Saved. Repo/path will sync to all devices automatically. Token must be entered on each device once (stays local for security).</div>';
+  },3000);
 }
 async function syncFromGitHub(){
   const al=document.getElementById('gh-config-alert');
