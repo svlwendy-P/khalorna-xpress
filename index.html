@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Khalorna Xpress Enterprise System</title>
+<title>Khalorna Xpress System (No Email Login)</title>
 
 <style>
 body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
@@ -12,9 +12,8 @@ body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
 .active { background:#2e4a9e !important; }
 .container { padding:20px; }
 .card { background:#132040; padding:15px; margin-bottom:10px; border-radius:10px; }
-input { padding:6px; margin:4px 0; }
+input, select { padding:6px; margin:4px 0; }
 button { padding:6px 10px; }
-.small { font-size:12px; opacity:0.8; }
 .hidden { display:none; }
 </style>
 </head>
@@ -25,9 +24,12 @@ button { padding:6px 10px; }
 <div id="loginSection" class="container">
   <div class="card">
     <h3>Login</h3>
-    <input id="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
-    <button onclick="login()">Login</button>
+    <input id="username" placeholder="Enter Name (e.g. Diony)">
+    <select id="roleSelect">
+      <option value="driver">Driver</option>
+      <option value="admin">Admin</option>
+    </select>
+    <button onclick="login()">Enter</button>
   </div>
 </div>
 
@@ -39,7 +41,6 @@ button { padding:6px 10px; }
   <button onclick="switchTab('trips')" id="tab-trips">Trips</button>
   <button onclick="switchTab('earnings')" id="tab-earnings">Earnings</button>
   <button onclick="switchTab('drivers')" id="tab-drivers">Drivers</button>
-  <button onclick="switchTab('reports')" id="tab-reports">Reports</button>
   <button onclick="switchTab('customers')" id="tab-customers">Customers</button>
   <button onclick="switchTab('fleet')" id="tab-fleet">Fleet</button>
 </div>
@@ -48,16 +49,14 @@ button { padding:6px 10px; }
 
 <div id="dashboard">
   <div class="card">
-    <h3>Executive Dashboard</h3>
     <p>Total Trips: <span id="totalTrips">0</span></p>
-    <p>Total Revenue: JMD <span id="totalRevenue">0</span></p>
-    <p>Total Profit: JMD <span id="totalProfit">0</span></p>
+    <p>Total Revenue: <span id="totalRevenue">0</span></p>
+    <p>Total Profit: <span id="totalProfit">0</span></p>
   </div>
 </div>
 
 <div id="trips" style="display:none;">
   <div class="card">
-    <h3>Add Trip</h3>
     <input id="destination" placeholder="Destination">
     <input id="amount" type="number" placeholder="Revenue">
     <input id="fuelCost" type="number" placeholder="Fuel Cost">
@@ -67,41 +66,26 @@ button { padding:6px 10px; }
     <input id="truckId" placeholder="Truck ID">
     <button onclick="addTrip()">Add Trip</button>
   </div>
-  <div class="card"><ul id="tripList"></ul></div>
+  <ul id="tripList"></ul>
 </div>
 
 <div id="earnings" style="display:none;">
   <div class="card">
-    <p>Total Revenue: JMD <span id="totalRevenue2">0</span></p>
-    <p>Total Profit: JMD <span id="totalProfit2">0</span></p>
+    <p>Total Revenue: <span id="totalRevenue2">0</span></p>
+    <p>Total Profit: <span id="totalProfit2">0</span></p>
   </div>
 </div>
 
-<div id="drivers" style="display:none;"><div class="card"><ul id="driverEarningsList"></ul></div></div>
-
-<div id="reports" style="display:none;">
-  <div class="card">
-    <p id="monthlyReport"></p>
-    <button onclick="exportCSV()">Export CSV</button>
-  </div>
-</div>
-
-<div id="customers" style="display:none;"><div class="card"><ul id="customerList"></ul></div></div>
-
-<div id="fleet" style="display:none;">
-  <div class="card">
-    <h3>Fleet Performance</h3>
-    <ul id="fleetList"></ul>
-  </div>
-</div>
+<div id="drivers" style="display:none;"><ul id="driverEarningsList"></ul></div>
+<div id="customers" style="display:none;"><ul id="customerList"></ul></div>
+<div id="fleet" style="display:none;"><ul id="fleetList"></ul></div>
 
 </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
@@ -111,39 +95,35 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app);
 
 let trips = [];
-let userRole = "admin";
 let currentUser = null;
+let userRole = "driver";
 
-window.login = async function() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+window.login = function() {
+  const name = document.getElementById("username").value;
+  const role = document.getElementById("roleSelect").value;
 
-  const userCred = await signInWithEmailAndPassword(auth, email, password);
-  currentUser = userCred.user;
+  if (!name) return alert("Enter your name");
 
-  const roleDoc = await getDoc(doc(db, "users", email));
-  if (roleDoc.exists()) userRole = roleDoc.data().role;
+  currentUser = { name };
+  userRole = role;
 
   document.getElementById("loginSection").style.display = "none";
   document.getElementById("appSection").classList.remove("hidden");
 };
 
 window.switchTab = function(tab) {
-  document.querySelectorAll('[id^="tab-"]').forEach(b => b.classList.remove("active"));
-  document.querySelectorAll('.container > div').forEach(d => d.style.display = "none");
-  document.getElementById(tab).style.display = "block";
-  document.getElementById("tab-"+tab).classList.add("active");
-}
+  document.querySelectorAll('.container > div').forEach(d => d.style.display="none");
+  document.getElementById(tab).style.display="block";
+};
 
 window.addTrip = async function() {
   const destination = document.getElementById("destination").value;
   const amount = Number(document.getElementById("amount").value);
   const fuelCost = Number(document.getElementById("fuelCost").value||0);
   const driverPay = Number(document.getElementById("driverPay").value||0);
-  const driver = document.getElementById("driverName").value;
+  const driver = document.getElementById("driverName").value || currentUser.name;
   const customer = document.getElementById("customerName").value;
   const truck = document.getElementById("truckId").value;
 
@@ -151,26 +131,26 @@ window.addTrip = async function() {
 
   await addDoc(collection(db, "trips"), {
     destination, amount, fuelCost, driverPay, driver, customer, truck,
-    profit, status: "pending", createdAt: Date.now()
+    profit, status:"pending", createdAt:Date.now()
   });
 };
 
 window.markDone = async function(id) {
-  await updateDoc(doc(db, "trips", id), { status: "completed" });
+  await updateDoc(doc(db, "trips", id), { status:"completed" });
 };
 
-onSnapshot(collection(db, "trips"), (snapshot) => {
+onSnapshot(collection(db, "trips"), snapshot => {
   trips = [];
   snapshot.forEach(d => {
     const data = { id:d.id, ...d.data() };
-    if(userRole==="admin" || data.driver===currentUser?.email) trips.push(data);
+    if(userRole==="admin" || data.driver===currentUser.name) trips.push(data);
   });
   render();
 });
 
 function render() {
-  let revenue=0, profit=0, completed=0;
-  let drivers={}, customers={}, fleet={}, monthly=0;
+  let revenue=0, profit=0;
+  let drivers={}, customers={}, fleet={};
 
   tripList.innerHTML="";
   driverEarningsList.innerHTML="";
@@ -180,46 +160,26 @@ function render() {
   trips.forEach(t=>{
     revenue+=t.amount||0;
     profit+=t.profit||0;
-    if(t.status==="completed") completed++;
 
     drivers[t.driver]=(drivers[t.driver]||0)+(t.driverPay||0);
     customers[t.customer]=(customers[t.customer]||0)+(t.amount||0);
     fleet[t.truck]=(fleet[t.truck]||0)+(t.profit||0);
 
-    if(Date.now()-t.createdAt<2592000000) monthly+=t.profit||0;
-
     const li=document.createElement("li");
-    li.innerHTML=`${t.destination} | ${t.driver} | Profit: ${t.profit}
-    <button onclick="markDone('${t.id}')">Done</button>
-    <button onclick="generateInvoice('${t.destination}','${t.customer}','${t.amount}')">Invoice</button>`;
+    li.innerHTML=`${t.destination} | ${t.driver} | Profit ${t.profit}`;
     tripList.appendChild(li);
   });
 
-  Object.keys(drivers).forEach(d=> driverEarningsList.innerHTML+=`<li>${d}: ${drivers[d]}</li>`);
-  Object.keys(customers).forEach(c=> customerList.innerHTML+=`<li>${c}: ${customers[c]}</li>`);
-  Object.keys(fleet).forEach(f=> fleetList.innerHTML+=`<li>${f}: Profit ${fleet[f]}</li>`);
+  Object.keys(drivers).forEach(d=>driverEarningsList.innerHTML+=`<li>${d}: ${drivers[d]}</li>`);
+  Object.keys(customers).forEach(c=>customerList.innerHTML+=`<li>${c}: ${customers[c]}</li>`);
+  Object.keys(fleet).forEach(f=>fleetList.innerHTML+=`<li>${f}: ${fleet[f]}</li>`);
 
   totalTrips.textContent=trips.length;
   totalRevenue.textContent=revenue;
   totalProfit.textContent=profit;
   totalRevenue2.textContent=revenue;
   totalProfit2.textContent=profit;
-  monthlyReport.textContent=`Monthly Profit: ${monthly}`;
 }
-
-window.exportCSV = function() {
-  let csv="Destination,Driver,Revenue,Profit\n";
-  trips.forEach(t=> csv+=`${t.destination},${t.driver},${t.amount},${t.profit}\n`);
-  const blob=new Blob([csv]);
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download="report.csv";
-  a.click();
-};
-
-window.generateInvoice = function(dest, customer, amount) {
-  alert(`Invoice\nCustomer: ${customer}\nTrip: ${dest}\nAmount: JMD ${amount}`);
-};
 
 </script>
 
