@@ -1,211 +1,152 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KX Dispatch System (Stable)</title>
+<title>KX Final Stable</title>
 
 <style>
-body { font-family: Arial; margin:0; background:#0A1628; color:#fff; }
-.nav { display:flex; background:#132040; padding:10px; gap:10px; }
-.nav button { background:#1c2c50; color:white; border:none; padding:10px; cursor:pointer; }
-.container { padding:20px; }
-.card { background:#132040; padding:15px; margin-bottom:10px; border-radius:10px; }
-input { padding:6px; margin:4px 0; width:100%; }
-button { margin:3px; padding:6px 10px; }
-.status { color:#00ffcc; font-weight:bold; }
+body { font-family: Arial; background:#0A1628; color:white; }
+.nav button { margin:5px; }
+.card { padding:15px; margin:10px; background:#132040; border-radius:10px; }
 </style>
 </head>
 
 <body>
 
 <div class="nav">
-  <button onclick="switchTab('dashboard')">Dashboard</button>
-  <button onclick="switchTab('trips')">Trips</button>
-  <button onclick="switchTab('archive')">Archive</button>
+<button onclick="show('dashboard')">Dashboard</button>
+<button onclick="show('trips')">Trips</button>
+<button onclick="show('archive')">Archive</button>
 </div>
 
-<div class="container">
-
-<div id="dashboard">
-  <div class="card">
-    <h3>Summary</h3>
-    <p>Total Trips: <span id="totalTrips">0</span></p>
-    <p>Total Earnings: JMD <span id="totalEarnings">0</span></p>
-  </div>
+<div id="dashboard" class="card">
+<h3>Summary</h3>
+<p>Total Trips: <span id="count">0</span></p>
+<p>Total Earnings: JMD <span id="earnings">0</span></p>
 </div>
 
-<div id="trips" style="display:none;">
-  <div class="card">
-    <h3>Add Trip</h3>
-    <input id="destination" placeholder="Destination">
-    <input id="amount" type="number" placeholder="Revenue">
-    <button onclick="createTrip()">Add Trip</button>
-  </div>
+<div id="trips" class="card" style="display:none">
+<h3>Add Trip</h3>
+<input id="destination" placeholder="Destination"><br>
+<input id="amount" type="number" placeholder="Revenue"><br>
+<button onclick="addTrip()">Add</button>
 
-  <div class="card">
-    <ul id="tripList"></ul>
-  </div>
+<ul id="list"></ul>
 </div>
 
-<div id="archive" style="display:none;">
-  <div class="card">
-    <h3>Archived Trips</h3>
-    <ul id="archiveList"></ul>
-  </div>
-</div>
-
+<div id="archive" class="card" style="display:none">
+<h3>Archive</h3>
+<ul id="archiveList"></ul>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc } 
+import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* FIREBASE */
-const firebaseConfig = {
+const app = initializeApp({
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
   authDomain: "khalorna-xpress-app.firebaseapp.com",
   projectId: "khalorna-xpress-app"
-};
+});
 
-const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 let trips = [];
-let archivedTrips = [];
+let archive = [];
 
 /* NAV */
-window.switchTab = function(tab){
-  ["dashboard","trips","archive"].forEach(id=>{
-    document.getElementById(id).style.display="none";
-  });
-  document.getElementById(tab).style.display="block";
+window.show = (id)=>{
+["dashboard","trips","archive"].forEach(x=>{
+document.getElementById(x).style.display="none";
+});
+document.getElementById(id).style.display="block";
 };
 
-/* CREATE */
-window.createTrip = async function(){
-  const destination = document.getElementById("destination").value;
-  const amount = Number(document.getElementById("amount").value);
+/* ADD */
+window.addTrip = async ()=>{
+const dest = destination.value;
+const amt = Number(amount.value);
 
-  if(!destination || !amount){
-    alert("Enter valid data");
-    return;
-  }
+if(!dest || !amt) return alert("Enter data");
 
-  await addDoc(collection(db,"trips"),{
-    destination,
-    amount,
-    status:"pending",
-    createdAt: Date.now()
-  });
+await addDoc(collection(db,"trips"),{
+destination:dest,
+amount:amt,
+status:"pending",
+createdAt:Date.now()
+});
 };
 
-/* STATUS UPDATE (FIXED) */
-async function updateStatus(id, status){
+/* UPDATE STATUS */
+window.updateStatus = async(id,status)=>{
+await updateDoc(doc(db,"trips",id),{status});
 
-  // 🔹 optimistic update
-  const trip = trips.find(t=>t.id===id);
-  if(trip){
-    trip.status = status;
-    renderTrips();
-  }
+if(status==="paid"){
+const trip = trips.find(t=>t.id===id);
 
-  try {
-    await updateDoc(doc(db,"trips",id), { status });
-
-    if(status === "paid"){
-      await archiveTrip(id);
-    }
-
-  } catch(e){
-    console.error(e);
-  }
-}
-
-/* ARCHIVE */
-async function archiveTrip(id){
-  const trip = trips.find(t=>t.id===id);
-  if(!trip) return;
-
-  await addDoc(collection(db,"archivedTrips"),{
-    ...trip,
-    archivedAt: Date.now()
-  });
-
-  await deleteDoc(doc(db,"trips",id));
-}
-
-/* SNAPSHOT (SAFE MERGE) */
-onSnapshot(collection(db,"trips"), snap=>{
-  const newTrips=[];
-
-  snap.forEach(d=>{
-    const data = { id:d.id, ...d.data() };
-
-    const local = trips.find(t=>t.id===d.id);
-
-    if(local && local.status !== data.status){
-      data.status = local.status;
-    }
-
-    newTrips.push(data);
-  });
-
-  trips = newTrips;
-  renderTrips();
+await addDoc(collection(db,"archivedTrips"),{
+...trip,
+archivedAt:Date.now()
 });
 
-onSnapshot(collection(db,"archivedTrips"), snap=>{
-  archivedTrips=[];
-  snap.forEach(d=>archivedTrips.push({id:d.id,...d.data()}));
-  renderArchive();
+await deleteDoc(doc(db,"trips",id));
+}
+};
+
+/* LISTEN TRIPS */
+onSnapshot(collection(db,"trips"),snap=>{
+trips=[];
+snap.forEach(d=>trips.push({id:d.id,...d.data()}));
+render();
 });
 
-/* RENDER TRIPS */
-function renderTrips(){
-  const list = document.getElementById("tripList");
-  list.innerHTML="";
+/* LISTEN ARCHIVE */
+onSnapshot(collection(db,"archivedTrips"),snap=>{
+archive=[];
+snap.forEach(d=>archive.push({id:d.id,...d.data()}));
+renderArchive();
+});
 
-  let earnings=0;
+/* RENDER */
+function render(){
+list.innerHTML="";
+let earn=0;
 
-  trips.forEach(t=>{
-    if(t.status === "completed" || t.status === "paid"){
-      earnings += t.amount;
-    }
+trips.forEach(t=>{
 
-    const li=document.createElement("li");
-
-    const label=document.createElement("span");
-    label.innerHTML=`<b>${t.destination}</b> - <span class="status">${t.status}</span><br>`;
-    li.appendChild(label);
-
-    ["assigned","in_progress","completed","paid"].forEach(s=>{
-      const btn=document.createElement("button");
-      btn.textContent=s;
-      btn.onclick=()=>updateStatus(t.id,s);
-      li.appendChild(btn);
-    });
-
-    list.appendChild(li);
-  });
-
-  document.getElementById("totalTrips").textContent=trips.length;
-  document.getElementById("totalEarnings").textContent=earnings;
+if(t.status==="completed" || t.status==="paid"){
+earn+=t.amount;
 }
 
-/* RENDER ARCHIVE */
+const li=document.createElement("li");
+
+li.innerHTML=`${t.destination} - ${t.status}`;
+
+["assigned","in_progress","completed","paid"].forEach(s=>{
+const b=document.createElement("button");
+b.textContent=s;
+b.onclick=()=>updateStatus(t.id,s);
+li.appendChild(b);
+});
+
+list.appendChild(li);
+});
+
+count.textContent=trips.length;
+earnings.textContent=earn;
+}
+
+/* ARCHIVE VIEW */
 function renderArchive(){
-  const list=document.getElementById("archiveList");
-  list.innerHTML="";
-
-  archivedTrips.forEach(t=>{
-    const li=document.createElement("li");
-    li.textContent=`${t.destination} - JMD ${t.amount}`;
-    list.appendChild(li);
-  });
+archiveList.innerHTML="";
+archive.forEach(t=>{
+const li=document.createElement("li");
+li.textContent=`${t.destination} - JMD ${t.amount}`;
+archiveList.appendChild(li);
+});
 }
-
 </script>
+
 </body>
 </html>
