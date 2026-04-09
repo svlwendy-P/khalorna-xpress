@@ -2,13 +2,13 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>KX Analytics Dashboard</title>
+<title>KX Executive Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getFirestore, collection, getDocs
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
@@ -21,18 +21,20 @@ const db = getFirestore(app);
 async function loadDashboard(){
 
   let earnings = 0;
+  let count = 0;
   let driverTotals = {};
   let monthlyTotals = {};
 
-  const archiveSnap = await getDocs(collection(db,"archivedTrips"));
+  const snap = await getDocs(collection(db,"archivedTrips"));
 
-  archiveSnap.forEach(doc=>{
+  snap.forEach(doc=>{
     const t = doc.data();
 
     const amount = parseFloat(t.amount);
     if(isNaN(amount)) return;
 
     earnings += amount;
+    count++;
 
     // DRIVER
     const driver = t.driver || "Unknown";
@@ -44,25 +46,38 @@ async function loadDashboard(){
     monthlyTotals[key] = (monthlyTotals[key] || 0) + amount;
   });
 
-  render(earnings, driverTotals, monthlyTotals);
+  renderKPIs(earnings, count);
+  renderCharts(driverTotals, monthlyTotals);
 }
 
-function render(earnings, drivers, months){
-
+function renderKPIs(earnings, count){
   document.getElementById("earnings").innerText = earnings;
+  document.getElementById("count").innerText = count;
+  document.getElementById("avg").innerText = count ? (earnings/count).toFixed(2) : 0;
+}
 
-  const driverList = document.getElementById("drivers");
-  driverList.innerHTML = "";
+function renderCharts(drivers, months){
 
-  Object.keys(drivers).forEach(d=>{
-    driverList.innerHTML += `<li>${d}: JMD ${drivers[d]}</li>`;
+  new Chart(document.getElementById("driverChart"), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(drivers),
+      datasets: [{
+        label: 'Driver Revenue',
+        data: Object.values(drivers)
+      }]
+    }
   });
 
-  const monthList = document.getElementById("months");
-  monthList.innerHTML = "";
-
-  Object.keys(months).forEach(m=>{
-    monthList.innerHTML += `<li>${m}: JMD ${months[m]}</li>`;
+  new Chart(document.getElementById("monthChart"), {
+    type: 'line',
+    data: {
+      labels: Object.keys(months),
+      datasets: [{
+        label: 'Monthly Revenue',
+        data: Object.values(months)
+      }]
+    }
   });
 }
 
@@ -72,14 +87,16 @@ window.onload = loadDashboard;
 
 <body>
 
-<h2>Total Earnings</h2>
-<div id="earnings">0</div>
+<h2>Executive Summary</h2>
+<p>Total Revenue: JMD <span id="earnings"></span></p>
+<p>Total Trips: <span id="count"></span></p>
+<p>Average per Trip: JMD <span id="avg"></span></p>
 
-<h2>Driver Earnings</h2>
-<ul id="drivers"></ul>
+<h2>Driver Performance</h2>
+<canvas id="driverChart"></canvas>
 
 <h2>Monthly Revenue</h2>
-<ul id="months"></ul>
+<canvas id="monthChart"></canvas>
 
 </body>
 </html>
