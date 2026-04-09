@@ -2,151 +2,169 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>KX Final Stable</title>
+<title>Khalorna Xpress Dashboard (Debug Build)</title>
 
-<style>
-body { font-family: Arial; background:#0A1628; color:white; }
-.nav button { margin:5px; }
-.card { padding:15px; margin:10px; background:#132040; border-radius:10px; }
-</style>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, getDocs,
+  updateDoc, deleteDoc, doc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
+  authDomain: "khalorna-xpress-app.firebaseapp.com",
+  projectId: "khalorna-xpress-app",
+  storageBucket: "khalorna-xpress-app.firebasestorage.app",
+  messagingSenderId: "926316181174",
+  appId: "1:926316181174:web:b96a4a81269e7d7766d817"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* ADD TRIP */
+window.addTrip = async function () {
+  const destination = document.getElementById("destination").value;
+  const amount = Number(document.getElementById("amount").value);
+  const driver = document.getElementById("driver").value;
+  const assistant = document.getElementById("assistant").value;
+
+  if (!destination || !amount) {
+    alert("Missing data");
+    return;
+  }
+
+  await addDoc(collection(db, "trips"), {
+    destination,
+    amount,
+    driver,
+    assistant,
+    status: "assigned",
+    createdAt: Date.now()
+  });
+
+  loadTrips();
+};
+
+/* UPDATE STATUS */
+window.updateStatus = async function (id, status) {
+  const ref = doc(db, "trips", id);
+
+  if (status === "paid") {
+
+    const snapshot = await getDocs(collection(db, "trips"));
+    const tripDoc = snapshot.docs.find(d => d.id === id);
+
+    if (!tripDoc) return;
+
+    const trip = tripDoc.data();
+
+    await addDoc(collection(db, "archivedTrips"), {
+      ...trip,
+      status: "paid",
+      archivedAt: Date.now()
+    });
+
+    await deleteDoc(ref);
+
+  } else {
+    await updateDoc(ref, { status });
+  }
+
+  loadTrips();
+};
+
+/* LOAD DATA */
+async function loadTrips() {
+
+  const list = document.getElementById("tripList");
+  const summary = document.getElementById("summary");
+
+  list.innerHTML = "";
+
+  let totalTrips = 0;
+  let earnings = 0;
+
+  console.log("------ DEBUG START ------");
+
+  /* ACTIVE TRIPS */
+  const tripsSnap = await getDocs(collection(db, "trips"));
+
+  tripsSnap.forEach(docSnap => {
+    const t = docSnap.data();
+
+    console.log("ACTIVE TRIP:", t);
+
+    totalTrips++;
+
+    const val = parseFloat(t.amount);
+    console.log("Parsed amount:", val);
+
+    if (!isNaN(val)) {
+      earnings += val;
+    } else {
+      console.warn("Invalid amount detected:", t.amount);
+    }
+
+    list.innerHTML += `
+      <li>
+        ${t.destination} - ${t.status}
+        <br>
+        <button onclick="updateStatus('${docSnap.id}','assigned')">assigned</button>
+        <button onclick="updateStatus('${docSnap.id}','in_progress')">in_progress</button>
+        <button onclick="updateStatus('${docSnap.id}','completed')">completed</button>
+        <button onclick="updateStatus('${docSnap.id}','paid')">paid</button>
+      </li>`;
+  });
+
+  /* ARCHIVED TRIPS */
+  const archiveSnap = await getDocs(collection(db, "archivedTrips"));
+
+  archiveSnap.forEach(docSnap => {
+    const t = docSnap.data();
+
+    console.log("ARCHIVED TRIP:", t);
+
+    const val = parseFloat(t.amount);
+    console.log("Parsed archive amount:", val);
+
+    if (!isNaN(val)) {
+      earnings += val;
+    } else {
+      console.warn("Invalid archive amount:", t.amount);
+    }
+  });
+
+  console.log("TOTAL EARNINGS CALCULATED:", earnings);
+  console.log("------ DEBUG END ------");
+
+  summary.innerHTML = `
+    Total Trips: ${totalTrips}<br>
+    Total Earnings: JMD ${earnings}
+  `;
+}
+
+/* INIT */
+window.onload = loadTrips;
+
+</script>
 </head>
 
 <body>
 
-<div class="nav">
-<button onclick="show('dashboard')">Dashboard</button>
-<button onclick="show('trips')">Trips</button>
-<button onclick="show('archive')">Archive</button>
-</div>
+<h2>Summary</h2>
+<div id="summary"></div>
 
-<div id="dashboard" class="card">
-<h3>Summary</h3>
-<p>Total Trips: <span id="count">0</span></p>
-<p>Total Earnings: JMD <span id="earnings">0</span></p>
-</div>
-
-<div id="trips" class="card" style="display:none">
-<h3>Add Trip</h3>
+<h2>Add Trip</h2>
 <input id="destination" placeholder="Destination"><br>
-<input id="amount" type="number" placeholder="Revenue"><br>
-<button onclick="addTrip()">Add</button>
+<input id="amount" placeholder="Revenue"><br>
+<input id="driver" placeholder="Driver"><br>
+<input id="assistant" placeholder="Assistant"><br>
+<button onclick="addTrip()">Add Trip</button>
 
-<ul id="list"></ul>
-</div>
-
-<div id="archive" class="card" style="display:none">
-<h3>Archive</h3>
-<ul id="archiveList"></ul>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, updateDoc, doc, deleteDoc }
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const app = initializeApp({
-  apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
-  authDomain: "khalorna-xpress-app.firebaseapp.com",
-  projectId: "khalorna-xpress-app"
-});
-
-const db = getFirestore(app);
-
-let trips = [];
-let archive = [];
-
-/* NAV */
-window.show = (id)=>{
-["dashboard","trips","archive"].forEach(x=>{
-document.getElementById(x).style.display="none";
-});
-document.getElementById(id).style.display="block";
-};
-
-/* ADD */
-window.addTrip = async ()=>{
-const dest = destination.value;
-const amt = Number(amount.value);
-
-if(!dest || !amt) return alert("Enter data");
-
-await addDoc(collection(db,"trips"),{
-destination:dest,
-amount:amt,
-status:"pending",
-createdAt:Date.now()
-});
-};
-
-/* UPDATE STATUS */
-window.updateStatus = async(id,status)=>{
-await updateDoc(doc(db,"trips",id),{status});
-
-if(status==="paid"){
-const trip = trips.find(t=>t.id===id);
-
-await addDoc(collection(db,"archivedTrips"),{
-...trip,
-archivedAt:Date.now()
-});
-
-await deleteDoc(doc(db,"trips",id));
-}
-};
-
-/* LISTEN TRIPS */
-onSnapshot(collection(db,"trips"),snap=>{
-trips=[];
-snap.forEach(d=>trips.push({id:d.id,...d.data()}));
-render();
-});
-
-/* LISTEN ARCHIVE */
-onSnapshot(collection(db,"archivedTrips"),snap=>{
-archive=[];
-snap.forEach(d=>archive.push({id:d.id,...d.data()}));
-renderArchive();
-});
-
-/* RENDER */
-function render(){
-list.innerHTML="";
-let earn=0;
-
-trips.forEach(t=>{
-
-if(t.status==="completed" || t.status==="paid"){
-earn+=t.amount;
-}
-
-const li=document.createElement("li");
-
-li.innerHTML=`${t.destination} - ${t.status}`;
-
-["assigned","in_progress","completed","paid"].forEach(s=>{
-const b=document.createElement("button");
-b.textContent=s;
-b.onclick=()=>updateStatus(t.id,s);
-li.appendChild(b);
-});
-
-list.appendChild(li);
-});
-
-count.textContent=trips.length;
-earnings.textContent=earn;
-}
-
-/* ARCHIVE VIEW */
-function renderArchive(){
-archiveList.innerHTML="";
-archive.forEach(t=>{
-const li=document.createElement("li");
-li.textContent=`${t.destination} - JMD ${t.amount}`;
-archiveList.appendChild(li);
-});
-}
-</script>
+<h2>Trips</h2>
+<ul id="tripList"></ul>
 
 </body>
 </html>
