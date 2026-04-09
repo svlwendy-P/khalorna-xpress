@@ -2,8 +2,13 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>KX Executive Dashboard</title>
+<title>KX Executive Dashboard (Stable)</title>
 
+<!-- Firebase (COMPAT MODE) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -25,44 +30,36 @@ canvas { background:white; border-radius:10px; margin-top:20px; }
 <h2>Monthly Revenue</h2>
 <canvas id="monthChart"></canvas>
 
-<script type="module">
+<script>
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const app = initializeApp({
+/* FIREBASE INIT */
+firebase.initializeApp({
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
   authDomain: "khalorna-xpress-app.firebaseapp.com",
   projectId: "khalorna-xpress-app"
 });
 
-const db = getFirestore(app);
+const db = firebase.firestore();
 
-// 🔥 FORCE SAFE LOAD
-window.addEventListener("DOMContentLoaded", async () => {
-  console.log("DOM Ready → Loading dashboard");
-  await loadDashboard();
-});
-
+/* LOAD DATA */
 async function loadDashboard(){
+
+  console.log("Loading dashboard...");
 
   let earnings = 0;
   let count = 0;
   let driverTotals = {};
   let monthlyTotals = {};
 
-  const snap = await getDocs(collection(db,"archivedTrips"));
+  const snapshot = await db.collection("archivedTrips").get();
 
-  console.log("Archive records:", snap.size);
+  console.log("Records found:", snapshot.size);
 
-  snap.forEach(doc=>{
+  snapshot.forEach(doc => {
     const t = doc.data();
 
     const amount = parseFloat(t.amount);
-    if(isNaN(amount)){
-      console.warn("Invalid amount:", t.amount);
-      return;
-    }
+    if (isNaN(amount)) return;
 
     earnings += amount;
     count++;
@@ -75,7 +72,7 @@ async function loadDashboard(){
     monthlyTotals[key] = (monthlyTotals[key] || 0) + amount;
   });
 
-  console.log("Totals:", earnings, count);
+  console.log("Earnings:", earnings);
 
   document.getElementById("earnings").innerText = earnings;
   document.getElementById("count").innerText = count;
@@ -84,19 +81,12 @@ async function loadDashboard(){
   renderCharts(driverTotals, monthlyTotals);
 }
 
+/* RENDER CHARTS */
 function renderCharts(drivers, months){
 
-  const driverCanvas = document.getElementById("driverChart");
-  const monthCanvas = document.getElementById("monthChart");
+  console.log("Rendering charts");
 
-  if(!driverCanvas || !monthCanvas){
-    console.error("Canvas missing");
-    return;
-  }
-
-  console.log("Rendering charts...");
-
-  new Chart(driverCanvas, {
+  new Chart(document.getElementById("driverChart"), {
     type: 'bar',
     data: {
       labels: Object.keys(drivers),
@@ -107,7 +97,7 @@ function renderCharts(drivers, months){
     }
   });
 
-  new Chart(monthCanvas, {
+  new Chart(document.getElementById("monthChart"), {
     type: 'line',
     data: {
       labels: Object.keys(months),
@@ -118,6 +108,9 @@ function renderCharts(drivers, months){
     }
   });
 }
+
+/* INIT */
+window.onload = loadDashboard;
 
 </script>
 
