@@ -2,27 +2,27 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>KX Executive Dashboard (Stable)</title>
+<title>KX Executive Dashboard (UAT Stable)</title>
 
-<!-- Firebase (COMPAT MODE) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body { font-family: Arial; background:#0A1628; color:white; padding:20px; }
 canvas { background:white; border-radius:10px; margin-top:20px; }
+.card { background:#162447; padding:15px; border-radius:10px; margin-bottom:20px; }
 </style>
 </head>
 
 <body>
 
 <h2>Executive Summary</h2>
+<div class="card">
 <p>Total Revenue: JMD <span id="earnings">0</span></p>
 <p>Total Trips: <span id="count">0</span></p>
 <p>Average per Trip: JMD <span id="avg">0</span></p>
+</div>
 
 <h2>Driver Performance</h2>
 <canvas id="driverChart"></canvas>
@@ -32,7 +32,7 @@ canvas { background:white; border-radius:10px; margin-top:20px; }
 
 <script>
 
-/* FIREBASE INIT */
+// INIT FIREBASE
 firebase.initializeApp({
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
   authDomain: "khalorna-xpress-app.firebaseapp.com",
@@ -41,10 +41,13 @@ firebase.initializeApp({
 
 const db = firebase.firestore();
 
-/* LOAD DATA */
-async function loadDashboard(){
+// SAFE START
+window.onload = async function () {
+  console.log("UAT START");
+  await loadDashboard();
+};
 
-  console.log("Loading dashboard...");
+async function loadDashboard(){
 
   let earnings = 0;
   let count = 0;
@@ -53,7 +56,7 @@ async function loadDashboard(){
 
   const snapshot = await db.collection("archivedTrips").get();
 
-  console.log("Records found:", snapshot.size);
+  console.log("Records:", snapshot.size);
 
   snapshot.forEach(doc => {
     const t = doc.data();
@@ -64,53 +67,69 @@ async function loadDashboard(){
     earnings += amount;
     count++;
 
+    // DRIVER
     const driver = t.driver || "Unknown";
     driverTotals[driver] = (driverTotals[driver] || 0) + amount;
 
-    const date = new Date(t.createdAt || Date.now());
-    const key = date.toLocaleString("default",{month:"short",year:"numeric"});
+    // DATE FIX (CRITICAL)
+    const timestamp = t.createdAt || t.archivedAt || Date.now();
+    const date = new Date(timestamp);
+
+    const key = date.toLocaleString("default", {
+      month: "short",
+      year: "numeric"
+    });
+
     monthlyTotals[key] = (monthlyTotals[key] || 0) + amount;
   });
 
-  console.log("Earnings:", earnings);
-
+  // UPDATE UI
   document.getElementById("earnings").innerText = earnings;
   document.getElementById("count").innerText = count;
-  document.getElementById("avg").innerText = count ? (earnings/count).toFixed(2) : 0;
+  document.getElementById("avg").innerText =
+    count ? (earnings / count).toFixed(2) : 0;
 
   renderCharts(driverTotals, monthlyTotals);
 }
 
-/* RENDER CHARTS */
+// CHART RENDER WITH FALLBACK
 function renderCharts(drivers, months){
 
   console.log("Rendering charts");
 
+  // SAFE DEFAULTS
+  const driverLabels = Object.keys(drivers);
+  const driverData = Object.values(drivers);
+
+  const monthLabels = Object.keys(months);
+  const monthData = Object.values(months);
+
+  // DRIVER CHART
   new Chart(document.getElementById("driverChart"), {
     type: 'bar',
     data: {
-      labels: Object.keys(drivers),
+      labels: driverLabels.length ? driverLabels : ["No Data"],
       datasets: [{
         label: 'Driver Revenue',
-        data: Object.values(drivers)
+        data: driverData.length ? driverData : [0]
       }]
     }
   });
 
+  // MONTH CHART
   new Chart(document.getElementById("monthChart"), {
     type: 'line',
     data: {
-      labels: Object.keys(months),
+      labels: monthLabels.length ? monthLabels : ["No Data"],
       datasets: [{
         label: 'Monthly Revenue',
-        data: Object.values(months)
+        data: monthData.length ? monthData : [0]
       }]
     }
   });
-}
 
-/* INIT */
-window.onload = loadDashboard;
+  console.log("Charts rendered successfully");
+}
 
 </script>
 
