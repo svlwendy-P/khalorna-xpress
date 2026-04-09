@@ -5,6 +5,20 @@
 <title>KX Executive Dashboard</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<h2>Executive Summary</h2>
+<p>Total Revenue: JMD <span id="earnings">0</span></p>
+<p>Total Trips: <span id="count">0</span></p>
+<p>Average per Trip: JMD <span id="avg">0</span></p>
+
+<h2>Driver Performance</h2>
+<canvas id="driverChart"></canvas>
+
+<h2>Monthly Revenue</h2>
+<canvas id="monthChart"></canvas>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -36,29 +50,32 @@ async function loadDashboard(){
     earnings += amount;
     count++;
 
-    // DRIVER
     const driver = t.driver || "Unknown";
     driverTotals[driver] = (driverTotals[driver] || 0) + amount;
 
-    // MONTH
     const date = new Date(t.createdAt || Date.now());
     const key = date.toLocaleString("default",{month:"short",year:"numeric"});
     monthlyTotals[key] = (monthlyTotals[key] || 0) + amount;
   });
 
-  renderKPIs(earnings, count);
-  renderCharts(driverTotals, monthlyTotals);
-}
-
-function renderKPIs(earnings, count){
   document.getElementById("earnings").innerText = earnings;
   document.getElementById("count").innerText = count;
   document.getElementById("avg").innerText = count ? (earnings/count).toFixed(2) : 0;
+
+  renderCharts(driverTotals, monthlyTotals);
 }
 
 function renderCharts(drivers, months){
 
-  new Chart(document.getElementById("driverChart"), {
+  const driverCanvas = document.getElementById("driverChart");
+  const monthCanvas = document.getElementById("monthChart");
+
+  if(!driverCanvas || !monthCanvas){
+    console.error("Canvas not found");
+    return;
+  }
+
+  new Chart(driverCanvas, {
     type: 'bar',
     data: {
       labels: Object.keys(drivers),
@@ -69,7 +86,7 @@ function renderCharts(drivers, months){
     }
   });
 
-  new Chart(document.getElementById("monthChart"), {
+  new Chart(monthCanvas, {
     type: 'line',
     data: {
       labels: Object.keys(months),
@@ -83,20 +100,6 @@ function renderCharts(drivers, months){
 
 window.onload = loadDashboard;
 </script>
-</head>
-
-<body>
-
-<h2>Executive Summary</h2>
-<p>Total Revenue: JMD <span id="earnings"></span></p>
-<p>Total Trips: <span id="count"></span></p>
-<p>Average per Trip: JMD <span id="avg"></span></p>
-
-<h2>Driver Performance</h2>
-<canvas id="driverChart"></canvas>
-
-<h2>Monthly Revenue</h2>
-<canvas id="monthChart"></canvas>
 
 </body>
 </html>
