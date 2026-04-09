@@ -2,169 +2,84 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Khalorna Xpress Dashboard (Debug Build)</title>
+<title>KX Analytics Dashboard</title>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, getDocs,
-  updateDoc, deleteDoc, doc
+  getFirestore, collection, getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig = {
+const app = initializeApp({
   apiKey: "AIzaSyB10v8HtOdkNqzSt6VlLwb-2hCMyjK5FKk",
   authDomain: "khalorna-xpress-app.firebaseapp.com",
-  projectId: "khalorna-xpress-app",
-  storageBucket: "khalorna-xpress-app.firebasestorage.app",
-  messagingSenderId: "926316181174",
-  appId: "1:926316181174:web:b96a4a81269e7d7766d817"
-};
+  projectId: "khalorna-xpress-app"
+});
 
-const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ADD TRIP */
-window.addTrip = async function () {
-  const destination = document.getElementById("destination").value;
-  const amount = Number(document.getElementById("amount").value);
-  const driver = document.getElementById("driver").value;
-  const assistant = document.getElementById("assistant").value;
+async function loadDashboard(){
 
-  if (!destination || !amount) {
-    alert("Missing data");
-    return;
-  }
-
-  await addDoc(collection(db, "trips"), {
-    destination,
-    amount,
-    driver,
-    assistant,
-    status: "assigned",
-    createdAt: Date.now()
-  });
-
-  loadTrips();
-};
-
-/* UPDATE STATUS */
-window.updateStatus = async function (id, status) {
-  const ref = doc(db, "trips", id);
-
-  if (status === "paid") {
-
-    const snapshot = await getDocs(collection(db, "trips"));
-    const tripDoc = snapshot.docs.find(d => d.id === id);
-
-    if (!tripDoc) return;
-
-    const trip = tripDoc.data();
-
-    await addDoc(collection(db, "archivedTrips"), {
-      ...trip,
-      status: "paid",
-      archivedAt: Date.now()
-    });
-
-    await deleteDoc(ref);
-
-  } else {
-    await updateDoc(ref, { status });
-  }
-
-  loadTrips();
-};
-
-/* LOAD DATA */
-async function loadTrips() {
-
-  const list = document.getElementById("tripList");
-  const summary = document.getElementById("summary");
-
-  list.innerHTML = "";
-
-  let totalTrips = 0;
   let earnings = 0;
+  let driverTotals = {};
+  let monthlyTotals = {};
 
-  console.log("------ DEBUG START ------");
+  const archiveSnap = await getDocs(collection(db,"archivedTrips"));
 
-  /* ACTIVE TRIPS */
-  const tripsSnap = await getDocs(collection(db, "trips"));
+  archiveSnap.forEach(doc=>{
+    const t = doc.data();
 
-  tripsSnap.forEach(docSnap => {
-    const t = docSnap.data();
+    const amount = parseFloat(t.amount);
+    if(isNaN(amount)) return;
 
-    console.log("ACTIVE TRIP:", t);
+    earnings += amount;
 
-    totalTrips++;
+    // DRIVER
+    const driver = t.driver || "Unknown";
+    driverTotals[driver] = (driverTotals[driver] || 0) + amount;
 
-    const val = parseFloat(t.amount);
-    console.log("Parsed amount:", val);
-
-    if (!isNaN(val)) {
-      earnings += val;
-    } else {
-      console.warn("Invalid amount detected:", t.amount);
-    }
-
-    list.innerHTML += `
-      <li>
-        ${t.destination} - ${t.status}
-        <br>
-        <button onclick="updateStatus('${docSnap.id}','assigned')">assigned</button>
-        <button onclick="updateStatus('${docSnap.id}','in_progress')">in_progress</button>
-        <button onclick="updateStatus('${docSnap.id}','completed')">completed</button>
-        <button onclick="updateStatus('${docSnap.id}','paid')">paid</button>
-      </li>`;
+    // MONTH
+    const date = new Date(t.createdAt || Date.now());
+    const key = date.toLocaleString("default",{month:"short",year:"numeric"});
+    monthlyTotals[key] = (monthlyTotals[key] || 0) + amount;
   });
 
-  /* ARCHIVED TRIPS */
-  const archiveSnap = await getDocs(collection(db, "archivedTrips"));
-
-  archiveSnap.forEach(docSnap => {
-    const t = docSnap.data();
-
-    console.log("ARCHIVED TRIP:", t);
-
-    const val = parseFloat(t.amount);
-    console.log("Parsed archive amount:", val);
-
-    if (!isNaN(val)) {
-      earnings += val;
-    } else {
-      console.warn("Invalid archive amount:", t.amount);
-    }
-  });
-
-  console.log("TOTAL EARNINGS CALCULATED:", earnings);
-  console.log("------ DEBUG END ------");
-
-  summary.innerHTML = `
-    Total Trips: ${totalTrips}<br>
-    Total Earnings: JMD ${earnings}
-  `;
+  render(earnings, driverTotals, monthlyTotals);
 }
 
-/* INIT */
-window.onload = loadTrips;
+function render(earnings, drivers, months){
 
+  document.getElementById("earnings").innerText = earnings;
+
+  const driverList = document.getElementById("drivers");
+  driverList.innerHTML = "";
+
+  Object.keys(drivers).forEach(d=>{
+    driverList.innerHTML += `<li>${d}: JMD ${drivers[d]}</li>`;
+  });
+
+  const monthList = document.getElementById("months");
+  monthList.innerHTML = "";
+
+  Object.keys(months).forEach(m=>{
+    monthList.innerHTML += `<li>${m}: JMD ${months[m]}</li>`;
+  });
+}
+
+window.onload = loadDashboard;
 </script>
 </head>
 
 <body>
 
-<h2>Summary</h2>
-<div id="summary"></div>
+<h2>Total Earnings</h2>
+<div id="earnings">0</div>
 
-<h2>Add Trip</h2>
-<input id="destination" placeholder="Destination"><br>
-<input id="amount" placeholder="Revenue"><br>
-<input id="driver" placeholder="Driver"><br>
-<input id="assistant" placeholder="Assistant"><br>
-<button onclick="addTrip()">Add Trip</button>
+<h2>Driver Earnings</h2>
+<ul id="drivers"></ul>
 
-<h2>Trips</h2>
-<ul id="tripList"></ul>
+<h2>Monthly Revenue</h2>
+<ul id="months"></ul>
 
 </body>
 </html>
