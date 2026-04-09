@@ -2,16 +2,19 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>KX Executive Dashboard (UAT Stable)</title>
+<title>KX Dashboard (Final Fix)</title>
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<!-- Chart -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body { font-family: Arial; background:#0A1628; color:white; padding:20px; }
-canvas { background:white; border-radius:10px; margin-top:20px; }
+body { background:#0A1628; color:white; font-family:Arial; padding:20px; }
 .card { background:#162447; padding:15px; border-radius:10px; margin-bottom:20px; }
+canvas { background:white; margin-top:20px; border-radius:10px; }
 </style>
 </head>
 
@@ -19,9 +22,9 @@ canvas { background:white; border-radius:10px; margin-top:20px; }
 
 <h2>Executive Summary</h2>
 <div class="card">
-<p>Total Revenue: JMD <span id="earnings">0</span></p>
-<p>Total Trips: <span id="count">0</span></p>
-<p>Average per Trip: JMD <span id="avg">0</span></p>
+  <p>Total Revenue: JMD <span id="earnings">Loading...</span></p>
+  <p>Total Trips: <span id="count">Loading...</span></p>
+  <p>Average: JMD <span id="avg">Loading...</span></p>
 </div>
 
 <h2>Driver Performance</h2>
@@ -41,94 +44,111 @@ firebase.initializeApp({
 
 const db = firebase.firestore();
 
-// SAFE START
-window.onload = async function () {
-  console.log("UAT START");
-  await loadDashboard();
+// FORCE EXECUTION AFTER PAGE READY
+window.onload = function () {
+  setTimeout(loadDashboard, 300); // small delay ensures scripts loaded
 };
 
 async function loadDashboard(){
+
+  console.log("START LOAD");
 
   let earnings = 0;
   let count = 0;
   let driverTotals = {};
   let monthlyTotals = {};
 
-  const snapshot = await db.collection("archivedTrips").get();
+  try {
 
-  console.log("Records:", snapshot.size);
+    const snapshot = await db.collection("archivedTrips").get();
 
-  snapshot.forEach(doc => {
-    const t = doc.data();
+    console.log("Docs:", snapshot.size);
 
-    const amount = parseFloat(t.amount);
-    if (isNaN(amount)) return;
+    snapshot.forEach(doc => {
 
-    earnings += amount;
-    count++;
+      const t = doc.data();
 
-    // DRIVER
-    const driver = t.driver || "Unknown";
-    driverTotals[driver] = (driverTotals[driver] || 0) + amount;
+      const amount = parseFloat(t.amount);
 
-    // DATE FIX (CRITICAL)
-    const timestamp = t.createdAt || t.archivedAt || Date.now();
-    const date = new Date(timestamp);
+      if (isNaN(amount)) {
+        console.warn("Bad amount:", t.amount);
+        return;
+      }
 
-    const key = date.toLocaleString("default", {
-      month: "short",
-      year: "numeric"
+      earnings += amount;
+      count++;
+
+      // DRIVER
+      const driver = t.driver || "Unknown";
+      driverTotals[driver] = (driverTotals[driver] || 0) + amount;
+
+      // DATE FIX (CRITICAL)
+      const ts = t.archivedAt || t.createdAt || Date.now();
+      const date = new Date(ts);
+
+      const key = date.toLocaleString("default", {
+        month: "short",
+        year: "numeric"
+      });
+
+      monthlyTotals[key] = (monthlyTotals[key] || 0) + amount;
+
     });
 
-    monthlyTotals[key] = (monthlyTotals[key] || 0) + amount;
-  });
+    // UPDATE KPI
+    document.getElementById("earnings").innerText = earnings;
+    document.getElementById("count").innerText = count;
+    document.getElementById("avg").innerText =
+      count ? (earnings / count).toFixed(2) : 0;
 
-  // UPDATE UI
-  document.getElementById("earnings").innerText = earnings;
-  document.getElementById("count").innerText = count;
-  document.getElementById("avg").innerText =
-    count ? (earnings / count).toFixed(2) : 0;
+    // SAFETY CHECK
+    if(count === 0){
+      console.warn("No data found → charts will show default");
+    }
 
-  renderCharts(driverTotals, monthlyTotals);
+    renderCharts(driverTotals, monthlyTotals);
+
+  } catch (err) {
+    console.error("LOAD ERROR:", err);
+    alert("Error loading dashboard. Check console.");
+  }
 }
 
-// CHART RENDER WITH FALLBACK
 function renderCharts(drivers, months){
 
   console.log("Rendering charts");
 
-  // SAFE DEFAULTS
-  const driverLabels = Object.keys(drivers);
-  const driverData = Object.values(drivers);
+  // FALLBACK DATA
+  const dLabels = Object.keys(drivers).length ? Object.keys(drivers) : ["No Data"];
+  const dData = Object.values(drivers).length ? Object.values(drivers) : [0];
 
-  const monthLabels = Object.keys(months);
-  const monthData = Object.values(months);
+  const mLabels = Object.keys(months).length ? Object.keys(months) : ["No Data"];
+  const mData = Object.values(months).length ? Object.values(months) : [0];
 
-  // DRIVER CHART
   new Chart(document.getElementById("driverChart"), {
     type: 'bar',
     data: {
-      labels: driverLabels.length ? driverLabels : ["No Data"],
+      labels: dLabels,
       datasets: [{
         label: 'Driver Revenue',
-        data: driverData.length ? driverData : [0]
+        data: dData
       }]
     }
   });
 
-  // MONTH CHART
   new Chart(document.getElementById("monthChart"), {
     type: 'line',
     data: {
-      labels: monthLabels.length ? monthLabels : ["No Data"],
+      labels: mLabels,
       datasets: [{
         label: 'Monthly Revenue',
-        data: monthData.length ? monthData : [0]
+        data: mData
       }]
     }
   });
 
-  console.log("Charts rendered successfully");
+  console.log("CHART SUCCESS");
+
 }
 
 </script>
